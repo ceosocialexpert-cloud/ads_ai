@@ -1,7 +1,8 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { analyzeWebsite, analyzeScreenshot, analyzeDescription } from '@/lib/gemini';
 import { getServerSupabase } from '@/lib/supabase';
-import puppeteer from 'puppeteer';
+import puppeteer from 'puppeteer-core';
+import chromium from '@sparticuz/chromium';
 
 export async function POST(request: NextRequest) {
     try {
@@ -32,9 +33,16 @@ export async function POST(request: NextRequest) {
                 let websiteContent;
 
                 try {
+                    // Check if running on Vercel (serverless)
+                    const isVercel = process.env.VERCEL === '1';
+                    
                     browser = await puppeteer.launch({
+                        args: isVercel ? chromium.args : ['--no-sandbox', '--disable-setuid-sandbox'],
+                        defaultViewport: { width: 1920, height: 1080 },
+                        executablePath: isVercel 
+                            ? await chromium.executablePath() 
+                            : '/Applications/Google Chrome.app/Contents/MacOS/Google Chrome',
                         headless: true,
-                        args: ['--no-sandbox', '--disable-setuid-sandbox'],
                     });
                     const page = await browser.newPage();
 
