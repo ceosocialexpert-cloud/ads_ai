@@ -22,7 +22,9 @@ export default function GenerationSettings({
     const [selectedFormat, setSelectedFormat] = useState<string>('product-demo');
     const [selectedSize, setSelectedSize] = useState<string>('instagram-square');
     const [quantity, setQuantity] = useState<number>(1);
-    const [referenceImages, setReferenceImages] = useState<UploadedImage[]>([]);
+    const [templateImages, setTemplateImages] = useState<UploadedImage[]>([]);
+    const [personProductImages, setPersonProductImages] = useState<UploadedImage[]>([]);
+    const [logoImages, setLogoImages] = useState<UploadedImage[]>([]);
     const [referenceDescription, setReferenceDescription] = useState<string>('');
     const [isGenerating, setIsGenerating] = useState(false);
     const [generatedImages, setGeneratedImages] = useState<string[]>([]);
@@ -49,11 +51,21 @@ export default function GenerationSettings({
             // Find selected audience details
             const audienceDetails = targetAudiences.find(a => a.id === selectedAudience);
             
-            // Prepare reference images data
-            const referenceImagesData = referenceImages.map(img => ({
-                base64: img.base64,
-                type: img.type,
-            }));
+            // Prepare reference images data by type
+            const referenceImagesData = {
+                template: templateImages.map(img => ({
+                    base64: img.base64,
+                    type: img.type,
+                })),
+                personProduct: personProductImages.map(img => ({
+                    base64: img.base64,
+                    type: img.type,
+                })),
+                logo: logoImages.map(img => ({
+                    base64: img.base64,
+                    type: img.type,
+                })),
+            };
 
             const response = await fetch('/api/generate', {
                 method: 'POST',
@@ -219,11 +231,33 @@ export default function GenerationSettings({
                     </div>
                 </div>
 
-                {/* Reference Images */}
+                {/* Reference Images - Template/Background */}
                 <div className={styles.section}>
+                    <label>📎 Шаблон / Фон</label>
+                    <p className={styles.hint}>Завантажте зображення шаблону або фону для креативу</p>
                     <MultiImageUpload
-                        onImagesChange={setReferenceImages}
-                        maxImages={14}
+                        onImagesChange={setTemplateImages}
+                        maxImages={5}
+                    />
+                </div>
+
+                {/* Reference Images - Person/Product */}
+                <div className={styles.section}>
+                    <label>👤 Людина / Товар</label>
+                    <p className={styles.hint}>Завантажте фото спікера або товару</p>
+                    <MultiImageUpload
+                        onImagesChange={setPersonProductImages}
+                        maxImages={5}
+                    />
+                </div>
+
+                {/* Reference Images - Logo */}
+                <div className={styles.section}>
+                    <label>🏢 Логотип</label>
+                    <p className={styles.hint}>Завантажте логотип компанії або бренду</p>
+                    <MultiImageUpload
+                        onImagesChange={setLogoImages}
+                        maxImages={3}
                     />
                 </div>
 

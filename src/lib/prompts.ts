@@ -5,13 +5,19 @@ export interface ReferenceImage {
     type: 'style' | 'logo' | 'subject';
 }
 
+export interface ReferenceImages {
+    template?: ReferenceImage[];
+    personProduct?: ReferenceImage[];
+    logo?: ReferenceImage[];
+}
+
 export interface PromptContext {
     projectSummary: string;
     keyFeatures: string[];
     brandVoice: string;
     targetAudience: TargetAudience;
     format: string;
-    referenceImages?: ReferenceImage[];
+    referenceImages?: ReferenceImages;
     referenceDescription?: string;
 }
 
@@ -40,37 +46,46 @@ Demographics: ${targetAudience.demographics || 'Not specified'}
 CREATIVE FORMAT: ${formatInstructions}
 `;
 
-    // Handle reference images
-    if (referenceImages && referenceImages.length > 0) {
-        const styleRefs = referenceImages.filter(img => img.type === 'style');
-        const logoRefs = referenceImages.filter(img => img.type === 'logo');
-        const subjectRefs = referenceImages.filter(img => img.type === 'subject');
+    // Handle reference images with new structure
+    if (referenceImages) {
+        const hasAnyImages = 
+            (referenceImages.template && referenceImages.template.length > 0) ||
+            (referenceImages.personProduct && referenceImages.personProduct.length > 0) ||
+            (referenceImages.logo && referenceImages.logo.length > 0);
 
-        prompt += `\n📸 REFERENCE IMAGES PROVIDED:\n`;
+        if (hasAnyImages) {
+            prompt += `\n📸 REFERENCE IMAGES PROVIDED:\n`;
 
-        if (styleRefs.length > 0) {
-            prompt += `\n🎨 STYLE REFERENCES (${styleRefs.length} image(s)):
-- Extract the visual style, color palette, composition, and design aesthetic from these images
-- Adapt this style to resonate with the target audience: ${targetAudience.name}
-- Maintain the visual quality and professionalism while making it relevant to their needs\n`;
+            if (referenceImages.template && referenceImages.template.length > 0) {
+                prompt += `\n🎨 TEMPLATE/BACKGROUND (${referenceImages.template.length} image(s)):
+- Use these images as a template or background style
+- Extract the visual style, color palette, composition, and layout structure
+- This is the BASE/FOUNDATION for the creative
+- Maintain the overall aesthetic while adapting for the target audience\n`;
+            }
+
+            if (referenceImages.personProduct && referenceImages.personProduct.length > 0) {
+                prompt += `\n👤 PERSON/PRODUCT (${referenceImages.personProduct.length} image(s)):
+- Feature these people, speakers, or products prominently in the creative
+- Place them naturally within the template/background
+- Show them in a way that appeals to ${targetAudience.name}
+- Highlight how they relate to the audience's needs: ${targetAudience.needs.join(', ')}\n`;
+            }
+
+            if (referenceImages.logo && referenceImages.logo.length > 0) {
+                prompt += `\n🏬 LOGO/BRAND (${referenceImages.logo.length} image(s)):
+- Incorporate these logos or brand elements into the creative
+- Place strategically - visible but not overwhelming
+- Ensure brand identity is clear while maintaining design balance\n`;
+            }
+
+            prompt += `\n⚠️ COMPOSITION INSTRUCTION:
+1. START with the template/background style as the foundation
+2. LAYER the person/product as the main focal point
+3. ADD the logo/brand elements in appropriate locations
+4. ENSURE everything works together cohesively
+5. ADAPT the overall feel to specifically target ${targetAudience.name}\n`;
         }
-
-        if (logoRefs.length > 0) {
-            prompt += `\n🏷️ LOGO/BRAND ELEMENTS (${logoRefs.length} image(s)):
-- Incorporate these logos or brand elements naturally into the creative
-- Ensure proper placement and visibility without overwhelming the main message\n`;
-        }
-
-        if (subjectRefs.length > 0) {
-            prompt += `\n👤 SUBJECTS/PRODUCTS (${subjectRefs.length} image(s)):
-- Feature these people, products, or objects in the creative
-- Present them in a way that appeals to ${targetAudience.name}
-- Show how they solve the pain points: ${targetAudience.pain_points.join(', ')}\n`;
-        }
-
-        prompt += `\n⚠️ CRITICAL INSTRUCTION:
-While using the visual style from the reference images, you MUST adapt the scene, messaging, and overall feel to specifically target ${targetAudience.name}. 
-The reference provides the STYLE, but the TARGET AUDIENCE determines the CONTENT and EMOTIONAL TONE.\n`;
     }
 
     if (referenceDescription) {

@@ -86,18 +86,29 @@ export async function POST(request: NextRequest) {
             brandVoice: project.analysis_result?.brand_voice || 'Професійний',
             targetAudience: selectedAudience,
             format: format,
-            referenceImages: referenceImages.length > 0 ? referenceImages : undefined,
+            referenceImages: {
+                template: referenceImages.template || [],
+                personProduct: referenceImages.personProduct || [],
+                logo: referenceImages.logo || [],
+            },
             referenceDescription: referenceDescription || undefined,
         };
 
         const prompt = buildCreativePrompt(promptContext);
+
+        // Prepare all reference images for Vertex AI
+        const allReferenceImages = [
+            ...(referenceImages.template || []),
+            ...(referenceImages.personProduct || []),
+            ...(referenceImages.logo || []),
+        ];
 
         // Generate images using Vertex AI
         const generationParams: any = {
             prompt,
             aspectRatio: sizeConfig.ratio,
             numberOfImages: quantity,
-            referenceImages: referenceImages.map((img: any) => ({
+            referenceImages: allReferenceImages.map((img: any) => ({
                 base64: img.base64,
                 type: img.type || 'style',
             })),
@@ -116,7 +127,7 @@ export async function POST(request: NextRequest) {
             size: size,
             image_url: imageUrl,
             prompt_used: prompt,
-            reference_images: referenceImages.length > 0 ? referenceImages.map((img: any) => img.base64) : null,
+            reference_images: allReferenceImages.length > 0 ? allReferenceImages.map((img: any) => img.base64) : null,
         }));
 
         const { data: insertedCreatives, error: insertError } = await supabase
