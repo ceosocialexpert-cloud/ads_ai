@@ -108,25 +108,30 @@ export default function Home() {
       </header>
 
       <main className={styles.main}>
-        {/* Project Selector Bar */}
-        {availableProjects.length > 0 && (
-          <div className={styles.projectSelector}>
-            <label htmlFor="project-select">📁 Оберіть проект:</label>
-            <select
-              id="project-select"
-              value={currentProject?.id || ''}
-              onChange={(e) => handleProjectSelect(e.target.value)}
-              className={styles.projectSelect}
-            >
-              <option value="">— Новий аналіз —</option>
-              {availableProjects.map((project) => (
-                <option key={project.id} value={project.id}>
-                  {project.name || 'Проект без назви'} ({project.target_audiences?.length || 0} ЦА)
-                </option>
-              ))}
-            </select>
-          </div>
-        )}
+        {/* Project Selector Bar - Always visible */}
+        <div className={styles.projectSelector}>
+          <label htmlFor="project-select">📁 Проект:</label>
+          <select
+            id="project-select"
+            value={currentProject?.id || ''}
+            onChange={(e) => handleProjectSelect(e.target.value)}
+            className={styles.projectSelect}
+          >
+            <option value="">— Новий аналіз —</option>
+            {availableProjects.length > 0 && (
+              <optgroup label="Збережені проекти">
+                {availableProjects.map((project) => (
+                  <option key={project.id} value={project.id}>
+                    {project.name || 'Проект без назви'} ({project.target_audiences?.length || 0} ЦА)
+                  </option>
+                ))}
+              </optgroup>
+            )}
+          </select>
+          {availableProjects.length === 0 && (
+            <span className={styles.hint}>Почніть з аналізу сайту 👇</span>
+          )}
+        </div>
 
         <div className={styles.layout}>
           {/* Left Panel - Generation Settings */}

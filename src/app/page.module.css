@@ -60,6 +60,12 @@
   white-space: nowrap;
 }
 
+.projectSelector .hint {
+  font-size: 0.9rem;
+  color: var(--text-secondary);
+  font-style: italic;
+}
+
 .projectSelect {
   flex: 1;
   padding: 0.75rem 1rem;
