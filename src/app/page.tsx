@@ -14,7 +14,13 @@ export default function Home() {
   } | null>(null);
   const [selectedProjectId, setSelectedProjectId] = useState<string | null>(null);
   const [selectedAudienceId, setSelectedAudienceId] = useState<string | null>(null);
+  const [availableProjects, setAvailableProjects] = useState<any[]>([]);
   const sessionId = getSessionId();
+
+  // Load available projects
+  useEffect(() => {
+    loadAvailableProjects();
+  }, []);
 
   // Check for saved project/audience selection
   useEffect(() => {
@@ -34,6 +40,19 @@ export default function Home() {
     }
   }, []);
 
+  const loadAvailableProjects = async () => {
+    try {
+      const response = await fetch(`/api/projects?sessionId=${sessionId}`);
+      const data = await response.json();
+
+      if (data.success) {
+        setAvailableProjects(data.projects || []);
+      }
+    } catch (error) {
+      console.error('Failed to load projects:', error);
+    }
+  };
+
   const loadProjectDetails = async (projectId: string) => {
     try {
       const response = await fetch(`/api/projects?sessionId=${sessionId}&projectId=${projectId}`);
@@ -52,11 +71,21 @@ export default function Home() {
     }
   };
 
+  const handleProjectSelect = async (projectId: string) => {
+    if (!projectId) {
+      setCurrentProject(null);
+      return;
+    }
+    await loadProjectDetails(projectId);
+  };
+
   const handleAnalysisComplete = (projectId: string, analysis: any) => {
     setCurrentProject({
       id: projectId,
       analysis,
     });
+    // Reload projects list to include new project
+    loadAvailableProjects();
   };
 
   return (
@@ -79,6 +108,26 @@ export default function Home() {
       </header>
 
       <main className={styles.main}>
+        {/* Project Selector Bar */}
+        {availableProjects.length > 0 && (
+          <div className={styles.projectSelector}>
+            <label htmlFor="project-select">📁 Оберіть проект:</label>
+            <select
+              id="project-select"
+              value={currentProject?.id || ''}
+              onChange={(e) => handleProjectSelect(e.target.value)}
+              className={styles.projectSelect}
+            >
+              <option value="">— Новий аналіз —</option>
+              {availableProjects.map((project) => (
+                <option key={project.id} value={project.id}>
+                  {project.name || 'Проект без назви'} ({project.target_audiences?.length || 0} ЦА)
+                </option>
+              ))}
+            </select>
+          </div>
+        )}
+
         <div className={styles.layout}>
           {/* Left Panel - Generation Settings */}
           {currentProject && (
