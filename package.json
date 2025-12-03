@@ -14,11 +14,11 @@
     "@google/generative-ai": "^0.24.1",
     "@sparticuz/chromium": "^141.0.0",
     "@supabase/supabase-js": "^2.86.0",
-    "next": "16.0.6",
+    "next": "^16.0.7",
     "puppeteer": "^24.31.0",
     "puppeteer-core": "^24.31.0",
-    "react": "19.2.0",
-    "react-dom": "19.2.0",
+    "react": "^19.2.1",
+    "react-dom": "^19.2.1",
     "uuid": "^13.0.0"
   },
   "devDependencies": {
@@ -28,7 +28,7 @@
     "@types/uuid": "^10.0.0",
     "babel-plugin-react-compiler": "1.0.0",
     "eslint": "^9",
-    "eslint-config-next": "16.0.6",
+    "eslint-config-next": "^16.0.7",
     "typescript": "^5"
   }
 }
