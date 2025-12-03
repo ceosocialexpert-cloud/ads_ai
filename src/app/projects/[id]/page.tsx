@@ -11,6 +11,7 @@ export default function ProjectDetailPage() {
     const [project, setProject] = useState<Project | null>(null);
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState<string | null>(null);
+    const [isAnalyzing, setIsAnalyzing] = useState(false);
     const router = useRouter();
     const params = useParams();
     const sessionId = getSessionId();
@@ -57,6 +58,41 @@ export default function ProjectDetailPage() {
         
         // Redirect to main page with parameters
         router.push('/');
+    };
+
+    const handleRunAnalysis = async () => {
+        if (!project || !project.url) {
+            alert('Для аналізу потрібна URL адреса проекту');
+            return;
+        }
+
+        if (!confirm('Запустити аналіз проекту та визначити цільові аудиторії?')) {
+            return;
+        }
+
+        try {
+            setIsAnalyzing(true);
+            const response = await fetch('/api/analyze-project', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ projectId: project.id }),
+            });
+
+            const data = await response.json();
+
+            if (data.success) {
+                alert('✅ Аналіз завершено успішно!');
+                // Reload project to show new audiences
+                loadProject();
+            } else {
+                alert('Помилка аналізу: ' + data.error);
+            }
+        } catch (error) {
+            console.error('Analysis error:', error);
+            alert('Помилка запуску аналізу');
+        } finally {
+            setIsAnalyzing(false);
+        }
     };
 
     if (loading) {
@@ -133,17 +169,35 @@ export default function ProjectDetailPage() {
 
             <main className={styles.main}>
                 <div className={styles.projectHeader}>
-                    <h2>{project.name || 'Проект без назви'}</h2>
-                    {project.url && (
-                        <div className={styles.projectUrl}>
-                            <span>🌐</span>
-                            <a href={project.url} target="_blank" rel="noopener noreferrer">
-                                {project.url}
-                            </a>
+                    <div>
+                        <h2>{project.name || 'Проект без назви'}</h2>
+                        {project.url && (
+                            <div className={styles.projectUrl}>
+                                <span>🌐</span>
+                                <a href={project.url} target="_blank" rel="noopener noreferrer">
+                                    {project.url}
+                                </a>
+                            </div>
+                        )}
+                        <div className={styles.projectMeta}>
+                            <span>📅 Створено: {formatDate(project.created_at)}</span>
                         </div>
-                    )}
-                    <div className={styles.projectMeta}>
-                        <span>📅 Створено: {formatDate(project.created_at)}</span>
+                    </div>
+                    <div>
+                        <button
+                            className="btn btn-primary"
+                            onClick={handleRunAnalysis}
+                            disabled={isAnalyzing || !project.url}
+                        >
+                            {isAnalyzing ? (
+                                <>
+                                    <div className="spinner" style={{ width: '16px', height: '16px' }} />
+                                    Аналізую...
+                                </>
+                            ) : (
+                                '🎯 Запустити аналіз'
+                            )}
+                        </button>
                     </div>
                 </div>
 
