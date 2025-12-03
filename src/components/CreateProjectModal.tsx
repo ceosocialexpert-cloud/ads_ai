@@ -12,12 +12,14 @@ interface CreateProjectModalProps {
 export interface ProjectData {
     name: string;
     url: string;
+    language?: string;
     icon?: File | null;
 }
 
 export default function CreateProjectModal({ isOpen, onClose, onSubmit }: CreateProjectModalProps) {
     const [projectName, setProjectName] = useState('');
     const [projectUrl, setProjectUrl] = useState('');
+    const [projectLanguage, setProjectLanguage] = useState('uk');
     const [iconFile, setIconFile] = useState<File | null>(null);
     const [iconPreview, setIconPreview] = useState<string | null>(null);
     const fileInputRef = useRef<HTMLInputElement>(null);
@@ -60,12 +62,14 @@ export default function CreateProjectModal({ isOpen, onClose, onSubmit }: Create
         onSubmit({
             name: projectName,
             url: projectUrl,
+            language: projectLanguage,
             icon: iconFile,
         });
 
         // Reset form
         setProjectName('');
         setProjectUrl('');
+        setProjectLanguage('uk');
         setIconFile(null);
         setIconPreview(null);
     };
@@ -163,6 +167,27 @@ export default function CreateProjectModal({ isOpen, onClose, onSubmit }: Create
                             className={styles.input}
                             required
                         />
+                    </div>
+
+                    {/* Language Selection */}
+                    <div className={styles.field}>
+                        <label htmlFor="project-language" className={styles.label}>
+                            Мова аналізу *
+                        </label>
+                        <select
+                            id="project-language"
+                            value={projectLanguage}
+                            onChange={(e) => setProjectLanguage(e.target.value)}
+                            className={styles.input}
+                            required
+                        >
+                            <option value="uk">🇺🇦 Українська</option>
+                            <option value="ru">🇷🇺 Російська</option>
+                            <option value="en">🇬🇧 Англійська</option>
+                        </select>
+                        <small style={{ color: '#6b7280', fontSize: '0.875rem', marginTop: '0.25rem', display: 'block' }}>
+                            Мова, якою буде виконуватися аналіз цільової аудиторії
+                        </small>
                     </div>
 
                     {/* Submit Button */}

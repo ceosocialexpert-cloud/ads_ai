@@ -96,23 +96,6 @@ export default function Home() {
 
   return (
     <div className={styles.container}>
-      <header className={styles.header}>
-        <div className={styles.headerContent}>
-          <h1 className={styles.logo}>
-            <span className={styles.logoIcon}>🎨</span>
-            AI Creative Generator
-          </h1>
-          <nav className={styles.nav}>
-            <Link href="/projects" className="btn btn-secondary">
-              📁 Проекти
-            </Link>
-            <Link href="/gallery" className="btn btn-secondary">
-              🖼️ Галерея
-            </Link>
-          </nav>
-        </div>
-      </header>
-
       <main className={styles.main}>
         {/* Chat Interface - Full screen */}
         <div className={styles.chatContainer}>

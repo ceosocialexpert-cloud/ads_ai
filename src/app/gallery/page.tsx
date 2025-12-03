@@ -69,23 +69,6 @@ export default function GalleryPage() {
 
     return (
         <div className={styles.container}>
-            <header className={styles.header}>
-                <div className={styles.headerContent}>
-                    <Link href="/" className={styles.logo}>
-                        <span className={styles.logoIcon}>🎨</span>
-                        AI Creative Generator
-                    </Link>
-                    <nav className={styles.nav}>
-                        <Link href="/projects" className="btn btn-secondary">
-                            📁 Проекти
-                        </Link>
-                        <Link href="/" className="btn btn-secondary">
-                            ✨ Створити новий
-                        </Link>
-                    </nav>
-                </div>
-            </header>
-
             <main className={styles.main}>
                 <div className={styles.filters}>
                     <div className={styles.searchBox}>

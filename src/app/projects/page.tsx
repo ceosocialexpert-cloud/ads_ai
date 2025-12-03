@@ -8,6 +8,7 @@ import { Project } from '@/lib/supabase';
 import CreateProjectModal from '@/components/CreateProjectModal';
 import type { ProjectData } from '@/components/CreateProjectModal';
 import AnalysisConfirmModal from '@/components/AnalysisConfirmModal';
+import ConfirmDeleteModal from '@/components/ConfirmDeleteModal';
 import styles from './page.module.css';
 
 export default function ProjectsPage() {
@@ -17,11 +18,26 @@ export default function ProjectsPage() {
     const [isModalOpen, setIsModalOpen] = useState(false);
     const [isAnalysisModalOpen, setIsAnalysisModalOpen] = useState(false);
     const [createdProject, setCreatedProject] = useState<{ id: string; name: string; url: string } | null>(null);
+    const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
+    const [projectToDelete, setProjectToDelete] = useState<{ id: string; name: string } | null>(null);
     const router = useRouter();
     const sessionId = getSessionId();
 
     useEffect(() => {
         loadProjects();
+    }, []);
+
+    // Reload projects when page becomes visible (after returning from settings)
+    useEffect(() => {
+        const handleVisibilityChange = () => {
+            if (!document.hidden) {
+                console.log('Page visible, reloading projects...');
+                loadProjects();
+            }
+        };
+
+        document.addEventListener('visibilitychange', handleVisibilityChange);
+        return () => document.removeEventListener('visibilitychange', handleVisibilityChange);
     }, []);
 
     const loadProjects = async () => {
@@ -31,6 +47,12 @@ export default function ProjectsPage() {
             const data = await response.json();
 
             if (data.success) {
+                console.log('Loaded projects:', data.projects.map((p: Project) => ({
+                    id: p.id,
+                    name: p.name,
+                    hasScreenshot: !!p.screenshot_url,
+                    screenshotUrl: p.screenshot_url
+                })));
                 setProjects(data.projects);
             } else {
                 setError(data.error || 'Не вдалося завантажити проекти');
@@ -46,14 +68,17 @@ export default function ProjectsPage() {
     const handleDeleteProject = async (projectId: string, projectName: string) => {
         console.log('Delete button clicked for project:', projectId, projectName);
         
-        if (!confirm(`Ви дійсно хочете видалити проект "${projectName}"?`)) {
-            console.log('Delete cancelled by user');
-            return;
-        }
+        // Show custom modal instead of browser confirm
+        setProjectToDelete({ id: projectId, name: projectName });
+        setIsDeleteModalOpen(true);
+    };
+
+    const confirmDelete = async () => {
+        if (!projectToDelete) return;
 
         try {
             console.log('Sending delete request...');
-            const response = await fetch(`/api/projects?projectId=${projectId}`, {
+            const response = await fetch(`/api/projects?projectId=${projectToDelete.id}`, {
                 method: 'DELETE',
             });
             
@@ -64,16 +89,28 @@ export default function ProjectsPage() {
             if (data.success) {
                 console.log('Project deleted successfully');
                 // Remove project from state
-                setProjects(projects.filter(p => p.id !== projectId));
+                setProjects(projects.filter(p => p.id !== projectToDelete.id));
+                setIsDeleteModalOpen(false);
+                setProjectToDelete(null);
                 alert('✅ Проект успішно видалено');
             } else {
                 console.error('Delete failed:', data.error);
                 alert('Не вдалося видалити проект: ' + data.error);
+                setIsDeleteModalOpen(false);
+                setProjectToDelete(null);
             }
         } catch (err) {
             console.error('Delete error:', err);
             alert('Помилка видалення проекту: ' + (err instanceof Error ? err.message : 'Невідома помилка'));
+            setIsDeleteModalOpen(false);
+            setProjectToDelete(null);
         }
+    };
+
+    const cancelDelete = () => {
+        console.log('Delete cancelled by user');
+        setIsDeleteModalOpen(false);
+        setProjectToDelete(null);
     };
 
     const handleCreateProject = async (projectData: ProjectData) => {
@@ -95,6 +132,7 @@ export default function ProjectsPage() {
                     sessionId,
                     name: projectData.name,
                     url: projectData.url,
+                    language: projectData.language || 'uk',
                     icon: iconBase64,
                 }),
             });
@@ -169,28 +207,11 @@ export default function ProjectsPage() {
 
     return (
         <div className={styles.container}>
-            <header className={styles.header}>
-                <div className={styles.headerContent}>
-                    <h1 className={styles.logo}>
-                        <span className={styles.logoIcon}>📁</span>
-                        Мої проекти
-                    </h1>
-                    <nav className={styles.nav}>
-                        <Link href="/" className="btn btn-secondary">
-                            🏠 Головна
-                        </Link>
-                        <Link href="/gallery" className="btn btn-secondary">
-                            🖼️ Галерея
-                        </Link>
-                    </nav>
-                </div>
-            </header>
-
             <main className={styles.main}>
                 <div className={styles.content}>
                     <div className={styles.headerSection}>
                         <div>
-                            <h2>Збережені проекти</h2>
+                            <h1 style={{ fontSize: '2.5rem', margin: '0 0 0.5rem 0' }}>📁 Мої проекти</h1>
                             <p>Тут ви можете переглядати та керувати своїми збереженими проектами та цільовими аудиторіями</p>
                         </div>
                         <button 
@@ -227,8 +248,26 @@ export default function ProjectsPage() {
                     ) : (
                         <div className={styles.projectsGrid}>
                             {projects.map((project) => (
-                                <div key={project.id} className={styles.projectCard}>
+                                <div 
+                                    key={project.id} 
+                                    className={styles.projectCard}
+                                    onClick={() => router.push(`/projects/${project.id}`)}
+                                    style={{ cursor: 'pointer' }}
+                                >
                                     <div className={styles.cardHeader}>
+                                        <div className={styles.projectIcon}>
+                                            {project.screenshot_url ? (
+                                                <img 
+                                                    src={project.screenshot_url} 
+                                                    alt={project.name || 'Project icon'} 
+                                                    className={styles.projectIconImage}
+                                                />
+                                            ) : (
+                                                <div className={styles.projectIconPlaceholder}>
+                                                    📁
+                                                </div>
+                                            )}
+                                        </div>
                                         <h3>{project.name || 'Без назви'}</h3>
                                         <button
                                             className={styles.deleteBtn}
@@ -247,7 +286,12 @@ export default function ProjectsPage() {
                                     {project.url && (
                                         <div className={styles.projectUrl}>
                                             <span>🌐</span>
-                                            <a href={project.url} target="_blank" rel="noopener noreferrer">
+                                            <a 
+                                                href={project.url} 
+                                                target="_blank" 
+                                                rel="noopener noreferrer"
+                                                onClick={(e) => e.stopPropagation()}
+                                            >
                                                 {project.url}
                                             </a>
                                         </div>
@@ -263,18 +307,6 @@ export default function ProjectsPage() {
                                         <span className={styles.date}>
                                             Створено: {formatDate(project.created_at)}
                                         </span>
-                                        <button
-                                            className="btn btn-primary btn-sm"
-                                            onClick={(e) => {
-                                                e.preventDefault();
-                                                e.stopPropagation();
-                                                console.log('Navigate to project:', project.id);
-                                                router.push(`/projects/${project.id}`);
-                                            }}
-                                            type="button"
-                                        >
-                                            Переглянути деталі
-                                        </button>
                                     </div>
                                 </div>
                             ))}
@@ -298,6 +330,16 @@ export default function ProjectsPage() {
                     projectUrl={createdProject.url}
                     onConfirm={handleAnalysisConfirm}
                     onSkip={handleAnalysisSkip}
+                />
+            )}
+
+            {/* Delete Confirmation Modal */}
+            {projectToDelete && (
+                <ConfirmDeleteModal
+                    isOpen={isDeleteModalOpen}
+                    projectName={projectToDelete.name}
+                    onConfirm={confirmDelete}
+                    onCancel={cancelDelete}
                 />
             )}
         </div>

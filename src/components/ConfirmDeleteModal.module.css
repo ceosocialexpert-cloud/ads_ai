@@ -1,0 +1,143 @@
+.backdrop {
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: rgba(0, 0, 0, 0.6);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    z-index: 2000;
+    animation: fadeIn 0.2s ease-out;
+}
+
+.modal {
+    background: white;
+    border-radius: 16px;
+    box-shadow: 0 12px 40px rgba(0, 0, 0, 0.3);
+    max-width: 480px;
+    width: 90%;
+    padding: 2rem;
+    animation: slideUp 0.3s ease-out;
+    text-align: center;
+}
+
+.icon {
+    font-size: 4rem;
+    margin-bottom: 1rem;
+    animation: shake 0.5s ease-out;
+}
+
+.modal h2 {
+    margin: 0 0 1rem 0;
+    font-size: 1.75rem;
+    color: var(--text-primary);
+}
+
+.message {
+    font-size: 1.1rem;
+    color: var(--text-secondary);
+    margin-bottom: 1rem;
+    line-height: 1.5;
+}
+
+.message strong {
+    color: var(--primary-color);
+    font-weight: 600;
+}
+
+.warning {
+    background: rgba(239, 68, 68, 0.1);
+    border-left: 4px solid #ef4444;
+    padding: 1rem;
+    border-radius: 8px;
+    color: #dc2626;
+    font-size: 0.95rem;
+    margin-bottom: 2rem;
+    text-align: left;
+}
+
+.actions {
+    display: flex;
+    gap: 1rem;
+}
+
+.cancelBtn, .deleteBtn {
+    flex: 1;
+    padding: 1rem 1.5rem;
+    border-radius: 12px;
+    font-size: 1.05rem;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.2s;
+    border: none;
+}
+
+.cancelBtn {
+    background: white;
+    border: 2px solid var(--border-color);
+    color: var(--text-secondary);
+}
+
+.cancelBtn:hover {
+    background: var(--background-light);
+    border-color: var(--text-secondary);
+}
+
+.deleteBtn {
+    background: linear-gradient(135deg, #ef4444 0%, #dc2626 100%);
+    color: white;
+    box-shadow: 0 4px 12px rgba(239, 68, 68, 0.3);
+}
+
+.deleteBtn:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 6px 16px rgba(239, 68, 68, 0.4);
+}
+
+@keyframes fadeIn {
+    from {
+        opacity: 0;
+    }
+    to {
+        opacity: 1;
+    }
+}
+
+@keyframes slideUp {
+    from {
+        opacity: 0;
+        transform: translateY(30px) scale(0.95);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0) scale(1);
+    }
+}
+
+@keyframes shake {
+    0%, 100% {
+        transform: translateX(0);
+    }
+    10%, 30%, 50%, 70%, 90% {
+        transform: translateX(-5px);
+    }
+    20%, 40%, 60%, 80% {
+        transform: translateX(5px);
+    }
+}
+
+@media (max-width: 768px) {
+    .modal {
+        padding: 1.5rem;
+    }
+
+    .modal h2 {
+        font-size: 1.5rem;
+    }
+
+    .actions {
+        flex-direction: column;
+    }
+}

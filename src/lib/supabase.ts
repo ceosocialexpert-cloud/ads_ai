@@ -19,6 +19,7 @@ export interface Project {
   url?: string;
   description?: string;
   screenshot_url?: string;
+  language?: string; // Language code: 'uk', 'ru', 'en'
   analysis_result?: {
     summary: string;
     key_features: string[];
@@ -38,6 +39,36 @@ export interface TargetAudience {
   demographics?: Record<string, string>; // Changed to key-value pairs
   created_at?: string; // New field
   updated_at?: string; // New field
+}
+
+export interface Subproject {
+  id: string;
+  project_id: string;
+  name: string;
+  url: string;
+  description?: string;
+  type: 'webinar' | 'landing' | 'campaign';
+  language?: string; // Language code: 'uk', 'ru', 'en'
+  analysis_result?: {
+    summary: string;
+    key_features: string[];
+    brand_voice: string;
+  };
+  target_audiences?: SubprojectTargetAudience[];
+  created_at: string;
+  updated_at: string;
+}
+
+export interface SubprojectTargetAudience {
+  id: string;
+  subproject_id: string;
+  name: string;
+  description: string;
+  pain_points: string[];
+  needs: string[];
+  demographics?: Record<string, string>;
+  created_at: string;
+  updated_at: string;
 }
 
 export interface ChatMessage {

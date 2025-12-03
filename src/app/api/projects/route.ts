@@ -56,7 +56,7 @@ export async function GET(request: NextRequest) {
         // Otherwise return list of projects for this session
         const { data: projects, error } = await supabase
             .from('projects')
-            .select('id, name, url, description, created_at')
+            .select('id, name, url, description, language, screenshot_url, created_at')
             .eq('session_id', sessionId)
             .order('created_at', { ascending: false });
 
@@ -84,7 +84,7 @@ export async function GET(request: NextRequest) {
 export async function POST(request: NextRequest) {
     try {
         const body = await request.json();
-        const { sessionId, name, url, icon } = body;
+        const { sessionId, name, url, language, icon } = body;
 
         if (!sessionId || !name) {
             return NextResponse.json(
@@ -102,6 +102,7 @@ export async function POST(request: NextRequest) {
                 session_id: sessionId,
                 name: name,
                 url: url || null,
+                language: language || 'uk',
                 description: null,
                 screenshot_url: icon || null, // Store icon as screenshot_url for now
                 analysis_result: null,

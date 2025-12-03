@@ -4,32 +4,54 @@ import { getServerSupabase } from '@/lib/supabase';
 
 const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY || '');
 
-// Language-specific prompts
-const getAnalysisPrompt = (websiteContent: string, language: string = 'uk') => {
+// Language-specific prompts for subproject analysis
+const getSubprojectAnalysisPrompt = (websiteContent: string, subproject: any, language: string = 'uk') => {
+    const typeTranslations: Record<string, Record<string, string>> = {
+        uk: {
+            webinar: 'вебінар',
+            landing: 'лендінг',
+            campaign: 'кампанія',
+        },
+        ru: {
+            webinar: 'вебинар',
+            landing: 'лендинг',
+            campaign: 'кампания',
+        },
+        en: {
+            webinar: 'webinar',
+            landing: 'landing page',
+            campaign: 'campaign',
+        },
+    };
+
+    const typeText = typeTranslations[language]?.[subproject.type] || typeTranslations['uk'][subproject.type];
+
     const prompts: Record<string, string> = {
         uk: `
-Проаналізуй веб-сайт та визнач цільові аудиторії для рекламних креативів.
+Проаналізуй веб-сторінку (вебінар/лендінг/кампанія) та визнач цільові аудиторії для рекламних креативів.
 
-КОНТЕНТ САЙТУ:
+КОНТЕКСТ: Це під-проект типу "${subproject.type}" - ${subproject.name}
+
+КОНТЕНТ СТОРІНКИ:
 ${websiteContent}
 
 ЗАВДАННЯ:
-1. Визнач 3-5 ключових сегментів цільової аудиторії
+1. Визнач 2-4 ключових сегментів цільової аудиторії для цього конкретного ${typeText}
 2. Для КОЖНОГО сегменту визнач:
    - Назву сегменту (коротко, 2-4 слова)
-   - Детальний опис (хто це, вік, інтереси, рівень доходу)
-   - 3-5 основних болів/проблем
+   - Детальний опис (хто це, вік, інтереси, мотивація відвідати цей ${typeText})
+   - 3-5 основних болів/проблем які вирішує цей ${typeText}
    - 3-5 потреб/бажань
    - Демографічні дані (вік, стать, локація, дохід)
 
-3. Загальна інформація про продукт:
-   - Короткий опис (1-2 речення)
-   - Ключові особливості (3-5 пунктів)
-   - Тон голосу бренду (professional/casual/friendly/luxury тощо)
+3. Загальна інформація про ${typeText}:
+   - Короткий опис (1-2 речення) - про що цей ${typeText}
+   - Ключові особливості (3-5 пунктів) - що унікального пропонується
+   - Тон голосу (professional/casual/friendly/luxury тощо)
 
 ФОРМАТ ВІДПОВІДІ (JSON):
 {
-  "summary": "Короткий опис продукту/послуги",
+  "summary": "Короткий опис ${typeText}",
   "key_features": ["Особливість 1", "Особливість 2", "Особливість 3"],
   "brand_voice": "professional",
   "target_audiences": [
@@ -51,28 +73,30 @@ ${websiteContent}
 Відповідай ТІЛЬКИ валідним JSON без додаткового тексту.`,
 
         ru: `
-Проанализируй веб-сайт и определи целевые аудитории для рекламных креативов.
+Проанализируй веб-страницу (вебинар/лендинг/кампания) и определи целевые аудитории для рекламных креативов.
 
-КОНТЕНТ САЙТА:
+КОНТЕКСТ: Это под-проект типа "${subproject.type}" - ${subproject.name}
+
+КОНТЕНТ СТРАНИЦЫ:
 ${websiteContent}
 
 ЗАДАЧА:
-1. Определи 3-5 ключевых сегментов целевой аудитории
+1. Определи 2-4 ключевых сегмента целевой аудитории для этого конкретного ${typeText}
 2. Для КАЖДОГО сегмента определи:
    - Название сегмента (коротко, 2-4 слова)
-   - Детальное описание (кто это, возраст, интересы, уровень дохода)
-   - 3-5 основных болей/проблем
+   - Детальное описание (кто это, возраст, интересы, мотивация посетить этот ${typeText})
+   - 3-5 основных болей/проблем, которые решает этот ${typeText}
    - 3-5 потребностей/желаний
    - Демографические данные (возраст, пол, локация, доход)
 
-3. Общая информация о продукте:
-   - Краткое описание (1-2 предложения)
-   - Ключевые особенности (3-5 пунктов)
-   - Тон голоса бренда (professional/casual/friendly/luxury и т.д.)
+3. Общая информация о ${typeText}:
+   - Краткое описание (1-2 предложения) - о чем этот ${typeText}
+   - Ключевые особенности (3-5 пунктов) - что уникального предлагается
+   - Тон голоса (professional/casual/friendly/luxury и т.д.)
 
 ФОРМАТ ОТВЕТА (JSON):
 {
-  "summary": "Краткое описание продукта/услуги",
+  "summary": "Краткое описание ${typeText}",
   "key_features": ["Особенность 1", "Особенность 2", "Особенность 3"],
   "brand_voice": "professional",
   "target_audiences": [
@@ -94,28 +118,30 @@ ${websiteContent}
 Отвечай ТОЛЬКО валидным JSON без дополнительного текста.`,
 
         en: `
-Analyze the website and identify target audiences for advertising creatives.
+Analyze the web page (webinar/landing/campaign) and identify target audiences for advertising creatives.
 
-WEBSITE CONTENT:
+CONTEXT: This is a sub-project of type "${subproject.type}" - ${subproject.name}
+
+PAGE CONTENT:
 ${websiteContent}
 
 TASK:
-1. Identify 3-5 key target audience segments
+1. Identify 2-4 key target audience segments for this specific ${typeText}
 2. For EACH segment define:
    - Segment name (brief, 2-4 words)
-   - Detailed description (who they are, age, interests, income level)
-   - 3-5 main pain points/problems
+   - Detailed description (who they are, age, interests, motivation to visit this ${typeText})
+   - 3-5 main pain points/problems this ${typeText} solves
    - 3-5 needs/desires
    - Demographic data (age, gender, location, income)
 
-3. General product information:
-   - Brief description (1-2 sentences)
-   - Key features (3-5 points)
-   - Brand voice tone (professional/casual/friendly/luxury etc.)
+3. General ${typeText} information:
+   - Brief description (1-2 sentences) - what this ${typeText} is about
+   - Key features (3-5 points) - what unique value is offered
+   - Voice tone (professional/casual/friendly/luxury etc.)
 
 RESPONSE FORMAT (JSON):
 {
-  "summary": "Brief product/service description",
+  "summary": "Brief ${typeText} description",
   "key_features": ["Feature 1", "Feature 2", "Feature 3"],
   "brand_voice": "professional",
   "target_audiences": [
@@ -193,45 +219,45 @@ async function scrapeWebsite(url: string): Promise<string> {
 
 export async function POST(request: NextRequest) {
     try {
-        const { projectId } = await request.json();
+        const { subprojectId } = await request.json();
 
-        if (!projectId) {
+        if (!subprojectId) {
             return NextResponse.json(
-                { error: 'Project ID is required' },
+                { error: 'Subproject ID is required' },
                 { status: 400 }
             );
         }
 
         const supabase = getServerSupabase();
 
-        // Get project details
-        const { data: project, error: projectError } = await supabase
-            .from('projects')
+        // Get subproject details
+        const { data: subproject, error: subprojectError } = await supabase
+            .from('subprojects')
             .select('*')
-            .eq('id', projectId)
+            .eq('id', subprojectId)
             .single();
 
-        if (projectError || !project) {
+        if (subprojectError || !subproject) {
             return NextResponse.json(
-                { error: 'Project not found' },
+                { error: 'Subproject not found' },
                 { status: 404 }
             );
         }
 
-        if (!project.url) {
+        if (!subproject.url) {
             return NextResponse.json(
-                { error: 'Project URL is required for analysis' },
+                { error: 'Subproject URL is required for analysis' },
                 { status: 400 }
             );
         }
 
         // Scrape website content
-        const websiteContent = await scrapeWebsite(project.url);
+        const websiteContent = await scrapeWebsite(subproject.url);
 
         // Analyze with Gemini
         const model = genAI.getGenerativeModel({ model: 'gemini-2.0-flash-exp' });
 
-        const analysisPrompt = getAnalysisPrompt(websiteContent, project.language || 'uk');
+        const analysisPrompt = getSubprojectAnalysisPrompt(websiteContent, subproject, subproject.language || 'uk');
 
         const result = await model.generateContent(analysisPrompt);
         const responseText = result.response.text();
@@ -244,13 +270,13 @@ export async function POST(request: NextRequest) {
 
         const analysisData = JSON.parse(jsonMatch[0]);
 
-        // Update project with analysis results
+        // Update subproject with analysis results
         const { error: updateError } = await supabase
-            .from('projects')
+            .from('subprojects')
             .update({
                 analysis_result: analysisData,
             })
-            .eq('id', projectId);
+            .eq('id', subprojectId);
 
         if (updateError) {
             throw updateError;
@@ -258,7 +284,7 @@ export async function POST(request: NextRequest) {
 
         // Save each target audience as a separate record
         const audiencesToInsert = analysisData.target_audiences.map((audience: any) => ({
-            project_id: projectId,
+            subproject_id: subprojectId,
             name: audience.name,
             description: audience.description,
             pain_points: audience.pain_points,
@@ -267,7 +293,7 @@ export async function POST(request: NextRequest) {
         }));
 
         const { error: audiencesError } = await supabase
-            .from('target_audiences')
+            .from('subproject_target_audiences')
             .insert(audiencesToInsert);
 
         if (audiencesError) {
