@@ -7,6 +7,7 @@ import { getSessionId } from '@/lib/session';
 import { Project } from '@/lib/supabase';
 import CreateProjectModal from '@/components/CreateProjectModal';
 import type { ProjectData } from '@/components/CreateProjectModal';
+import AnalysisConfirmModal from '@/components/AnalysisConfirmModal';
 import styles from './page.module.css';
 
 export default function ProjectsPage() {
@@ -14,6 +15,8 @@ export default function ProjectsPage() {
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState<string | null>(null);
     const [isModalOpen, setIsModalOpen] = useState(false);
+    const [isAnalysisModalOpen, setIsAnalysisModalOpen] = useState(false);
+    const [createdProject, setCreatedProject] = useState<{ id: string; name: string; url: string } | null>(null);
     const router = useRouter();
     const sessionId = getSessionId();
 
@@ -90,9 +93,14 @@ export default function ProjectsPage() {
 
             if (data.success) {
                 setIsModalOpen(false);
-                alert(`Проект "${projectData.name}" успішно створено!`);
-                // Reload projects
-                loadProjects();
+                // Store created project data
+                setCreatedProject({
+                    id: data.project.id,
+                    name: projectData.name,
+                    url: projectData.url || '',
+                });
+                // Show analysis confirmation modal
+                setIsAnalysisModalOpen(true);
             } else {
                 alert('Помилка створення проекту: ' + data.error);
             }
@@ -109,6 +117,43 @@ export default function ProjectsPage() {
             month: 'long',
             year: 'numeric',
         });
+    };
+
+    const handleAnalysisConfirm = async () => {
+        if (!createdProject) return;
+
+        try {
+            const response = await fetch('/api/analyze-project', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ projectId: createdProject.id }),
+            });
+
+            const data = await response.json();
+
+            if (data.success) {
+                setIsAnalysisModalOpen(false);
+                setCreatedProject(null);
+                alert(`✅ Аналіз проекту "${createdProject.name}" завершено успішно!`);
+                loadProjects();
+            } else {
+                alert('Помилка аналізу: ' + data.error);
+                setIsAnalysisModalOpen(false);
+                loadProjects();
+            }
+        } catch (error) {
+            console.error('Analysis error:', error);
+            alert('Помилка запуску аналізу');
+            setIsAnalysisModalOpen(false);
+            loadProjects();
+        }
+    };
+
+    const handleAnalysisSkip = () => {
+        setIsAnalysisModalOpen(false);
+        setCreatedProject(null);
+        alert(`✅ Проект "${createdProject?.name}" створено без аналізу`);
+        loadProjects();
     };
 
     return (
@@ -222,6 +267,17 @@ export default function ProjectsPage() {
                 onClose={() => setIsModalOpen(false)}
                 onSubmit={handleCreateProject}
             />
+
+            {/* Analysis Confirmation Modal */}
+            {createdProject && (
+                <AnalysisConfirmModal
+                    isOpen={isAnalysisModalOpen}
+                    projectName={createdProject.name}
+                    projectUrl={createdProject.url}
+                    onConfirm={handleAnalysisConfirm}
+                    onSkip={handleAnalysisSkip}
+                />
+            )}
         </div>
     );
 }
