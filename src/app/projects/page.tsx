@@ -44,25 +44,35 @@ export default function ProjectsPage() {
     };
 
     const handleDeleteProject = async (projectId: string, projectName: string) => {
+        console.log('Delete button clicked for project:', projectId, projectName);
+        
         if (!confirm(`Ви дійсно хочете видалити проект "${projectName}"?`)) {
+            console.log('Delete cancelled by user');
             return;
         }
 
         try {
+            console.log('Sending delete request...');
             const response = await fetch(`/api/projects?projectId=${projectId}`, {
                 method: 'DELETE',
             });
+            
+            console.log('Delete response status:', response.status);
             const data = await response.json();
+            console.log('Delete response data:', data);
 
             if (data.success) {
+                console.log('Project deleted successfully');
                 // Remove project from state
                 setProjects(projects.filter(p => p.id !== projectId));
+                alert('✅ Проект успішно видалено');
             } else {
+                console.error('Delete failed:', data.error);
                 alert('Не вдалося видалити проект: ' + data.error);
             }
         } catch (err) {
-            alert('Помилка видалення проекту');
-            console.error(err);
+            console.error('Delete error:', err);
+            alert('Помилка видалення проекту: ' + (err instanceof Error ? err.message : 'Невідома помилка'));
         }
     };
 
@@ -222,8 +232,13 @@ export default function ProjectsPage() {
                                         <h3>{project.name || 'Без назви'}</h3>
                                         <button
                                             className={styles.deleteBtn}
-                                            onClick={() => handleDeleteProject(project.id, project.name || 'Без назви')}
+                                            onClick={(e) => {
+                                                e.preventDefault();
+                                                e.stopPropagation();
+                                                handleDeleteProject(project.id, project.name || 'Без назви');
+                                            }}
                                             title="Видалити проект"
+                                            type="button"
                                         >
                                             🗑️
                                         </button>
@@ -250,7 +265,13 @@ export default function ProjectsPage() {
                                         </span>
                                         <button
                                             className="btn btn-primary btn-sm"
-                                            onClick={() => router.push(`/projects/${project.id}`)}
+                                            onClick={(e) => {
+                                                e.preventDefault();
+                                                e.stopPropagation();
+                                                console.log('Navigate to project:', project.id);
+                                                router.push(`/projects/${project.id}`);
+                                            }}
+                                            type="button"
                                         >
                                             Переглянути деталі
                                         </button>
