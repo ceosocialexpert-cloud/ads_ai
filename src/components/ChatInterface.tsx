@@ -92,35 +92,14 @@ export default function ChatInterface({ onAnalysisComplete }: ChatInterfaceProps
                 const analysisResult = await analysisResponse.json();
 
                 if (analysisResult.success) {
-                    // Add detailed analysis to chat context
-                    const analysisDetailsMessage: Message = {
-                        id: Date.now().toString(),
-                        role: 'system',
-                        content: `Аналіз сайту ${url}:
-
-Опис: ${analysisResult.analysis.summary}
-
-Ключові особливості:
-${analysisResult.analysis.key_features.map((f: string) => `- ${f}`).join('\n')}
-
-Тон бренду: ${analysisResult.analysis.brand_voice}
-
-Цільові аудиторії:
-${analysisResult.analysis.target_audiences.map((ta: any) => `
-${ta.name}:
-- Опис: ${ta.description}
-- Болі: ${ta.pain_points.join(', ')}
-- Потреби: ${ta.needs.join(', ')}`).join('\n')}`,
-                        created_at: new Date().toISOString(),
-                    };
-                    
+                    // Add system message about analysis completion (without detailed audience info)
                     const systemMessage: Message = {
                         id: (Date.now() + 1).toString(),
                         role: 'system',
-                        content: `✅ Аналіз сайту завершено! Знайдено ${analysisResult.analysis.target_audiences.length} сегментів цільової аудиторії.`,
+                        content: `✅ Аналіз сайту завершено! Знайдено ${analysisResult.analysis.target_audiences.length} сегментів цільової аудиторії. Перейдіть на сторінку "Проекти" для перегляду деталей.`,
                         created_at: new Date().toISOString(),
                     };
-                    setMessages(prev => [...prev, analysisDetailsMessage, systemMessage]);
+                    setMessages(prev => [...prev, systemMessage]);
 
                     if (onAnalysisComplete) {
                         onAnalysisComplete(analysisResult.project.id, analysisResult.analysis);
@@ -149,7 +128,7 @@ ${ta.name}:
                     const systemMessage: Message = {
                         id: (Date.now() + 1).toString(),
                         role: 'system',
-                        content: `✅ Аналіз зображення завершено! Знайдено ${analysisResult.analysis.target_audiences.length} сегментів цільової аудиторії.`,
+                        content: `✅ Аналіз зображення завершено! Знайдено ${analysisResult.analysis.target_audiences.length} сегментів цільової аудиторії. Перейдіть на сторінку "Проекти" для перегляду деталей.`,
                         created_at: new Date().toISOString(),
                     };
                     setMessages(prev => [...prev, systemMessage]);
@@ -219,7 +198,7 @@ ${ta.name}:
                 const systemMessage: Message = {
                     id: Date.now().toString(),
                     role: 'system',
-                    content: `✅ Аналіз завершено! Знайдено ${result.analysis.target_audiences.length} сегментів цільової аудиторії.`,
+                    content: `✅ Аналіз завершено! Знайдено ${result.analysis.target_audiences.length} сегментів цільової аудиторії. Перейдіть на сторінку "Проекти" для перегляду деталей.`,
                     created_at: new Date().toISOString(),
                 };
                 setMessages(prev => [...prev, systemMessage]);

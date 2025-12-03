@@ -76,6 +76,9 @@ export default function GalleryPage() {
                         AI Creative Generator
                     </Link>
                     <nav className={styles.nav}>
+                        <Link href="/projects" className="btn btn-secondary">
+                            📁 Проекти
+                        </Link>
                         <Link href="/" className="btn btn-secondary">
                             ✨ Створити новий
                         </Link>

@@ -4,18 +4,20 @@ import { getServerSupabase } from '@/lib/supabase';
 export async function GET(request: NextRequest) {
     try {
         const { searchParams } = new URL(request.url);
+        const limit = parseInt(searchParams.get('limit') || '20');
+        const offset = parseInt(searchParams.get('offset') || '0');
         const format = searchParams.get('format');
         const size = searchParams.get('size');
         const search = searchParams.get('search');
-        const limit = parseInt(searchParams.get('limit') || '50');
-        const offset = parseInt(searchParams.get('offset') || '0');
 
         const supabase = getServerSupabase();
 
+        // Build the query
         let query = supabase
             .from('generated_creatives')
-            .select('*', { count: 'exact' })
-            .order('created_at', { ascending: false });
+            .select('*')
+            .order('created_at', { ascending: false })
+            .range(offset, offset + limit - 1);
 
         // Apply filters
         if (format) {
@@ -27,13 +29,11 @@ export async function GET(request: NextRequest) {
         }
 
         if (search) {
+            // Search in target_audience or prompt_used fields
             query = query.or(`target_audience.ilike.%${search}%,prompt_used.ilike.%${search}%`);
         }
 
-        // Apply pagination
-        query = query.range(offset, offset + limit - 1);
-
-        const { data: creatives, error, count } = await query;
+        const { data: creatives, error } = await query;
 
         if (error) {
             console.error('Database error:', error);
@@ -46,9 +46,6 @@ export async function GET(request: NextRequest) {
         return NextResponse.json({
             success: true,
             creatives,
-            total: count,
-            limit,
-            offset,
         });
     } catch (error) {
         console.error('Fetch error:', error);

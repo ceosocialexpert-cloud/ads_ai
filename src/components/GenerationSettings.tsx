@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { TargetAudience } from '@/lib/supabase';
 import { CREATIVE_FORMATS, SIZE_OPTIONS } from '@/lib/prompts';
 import { getSessionId } from '@/lib/session';
@@ -29,6 +29,13 @@ export default function GenerationSettings({
 
     const sessionId = getSessionId();
 
+    // Set first audience as default when targetAudiences change
+    useEffect(() => {
+        if (targetAudiences && targetAudiences.length > 0 && !selectedAudience) {
+            setSelectedAudience(targetAudiences[0].id);
+        }
+    }, [targetAudiences, selectedAudience]);
+
     const handleGenerate = async () => {
         if (!selectedAudience || !selectedFormat || !selectedSize) {
             alert('Будь ласка, оберіть всі параметри');
@@ -39,6 +46,9 @@ export default function GenerationSettings({
         setGeneratedImages([]);
 
         try {
+            // Find selected audience details
+            const audienceDetails = targetAudiences.find(a => a.id === selectedAudience);
+            
             // Prepare reference images data
             const referenceImagesData = referenceImages.map(img => ({
                 base64: img.base64,
@@ -52,6 +62,7 @@ export default function GenerationSettings({
                     sessionId,
                     projectId,
                     targetAudience: selectedAudience,
+                    targetAudienceDetails: audienceDetails, // Send full audience details
                     format: selectedFormat,
                     size: selectedSize,
                     quantity,
@@ -67,7 +78,11 @@ export default function GenerationSettings({
 
                 // Show success message with timestamp
                 const now = new Date().toLocaleTimeString('uk-UA');
-                alert(`🎉 НОВІ креативи згенеровано о ${now}!\n\n✅ Кількість: ${data.imageUrls.length}\n📍 Результати показані НИЖЧЕ на цій сторінці\n🖼️ Також збережено в Галереї`);
+                alert(`🎉 НОВІ креативи згенеровано о ${now}!
+
+✅ Кількість: ${data.imageUrls.length}
+📍 Результати показані НИЖЧЕ на цій сторінці
+🖼️ Також збережено в Галереї`);
 
                 if (onGenerationComplete) {
                     onGenerationComplete(data.creatives);

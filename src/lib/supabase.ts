@@ -15,6 +15,7 @@ export const getServerSupabase = () => {
 export interface Project {
   id: string;
   session_id: string;
+  name?: string; // New field for project name
   url?: string;
   description?: string;
   screenshot_url?: string;
@@ -29,11 +30,14 @@ export interface Project {
 
 export interface TargetAudience {
   id: string;
+  project_id?: string; // New field to link to project
   name: string;
   description: string;
   pain_points: string[];
   needs: string[];
-  demographics?: string;
+  demographics?: Record<string, string>; // Changed to key-value pairs
+  created_at?: string; // New field
+  updated_at?: string; // New field
 }
 
 export interface ChatMessage {

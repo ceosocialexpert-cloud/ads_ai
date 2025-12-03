@@ -1,7 +1,8 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { generateImage, getSizeFromFormat } from '@/lib/vertexai';
-import { buildCreativePrompt, buildNegativePrompt } from '@/lib/prompts';
+import { generateImage } from '@/lib/vertexai';
+import { buildCreativePrompt } from '@/lib/prompts';
 import { getServerSupabase, TargetAudience } from '@/lib/supabase';
+import { CREATIVE_FORMATS, SIZE_OPTIONS } from '@/lib/prompts';
 
 export async function POST(request: NextRequest) {
     try {
@@ -10,6 +11,7 @@ export async function POST(request: NextRequest) {
             sessionId,
             projectId,
             targetAudience,
+            targetAudienceDetails, // New parameter
             format,
             size,
             quantity = 1,
@@ -17,7 +19,7 @@ export async function POST(request: NextRequest) {
             referenceDescription,
         } = body;
 
-        if (!sessionId || !projectId || !targetAudience || !format || !size) {
+        if (!sessionId || !projectId || (!targetAudience && !targetAudienceDetails)) {
             return NextResponse.json(
                 { error: 'Missing required parameters' },
                 { status: 400 }
@@ -40,10 +42,17 @@ export async function POST(request: NextRequest) {
             );
         }
 
-        // Find the selected target audience
-        const selectedAudience = project.target_audiences?.find(
-            (a: TargetAudience) => a.id === targetAudience
-        );
+        // Get target audience details
+        let selectedAudience;
+        if (targetAudienceDetails) {
+            // Use provided audience details
+            selectedAudience = targetAudienceDetails;
+        } else {
+            // Find the selected target audience from the project
+            selectedAudience = project.target_audiences?.find(
+                (a: TargetAudience) => a.id === targetAudience
+            );
+        }
 
         if (!selectedAudience) {
             return NextResponse.json(
@@ -52,56 +61,78 @@ export async function POST(request: NextRequest) {
             );
         }
 
-        // Build prompt
-        const prompt = buildCreativePrompt({
-            projectSummary: project.analysis_result?.summary || '',
+        // Get format details
+        const formatConfig = CREATIVE_FORMATS.find((f: any) => f.id === format);
+        if (!formatConfig) {
+            return NextResponse.json(
+                { error: 'Invalid format' },
+                { status: 400 }
+            );
+        }
+
+        // Get size details
+        const sizeConfig = SIZE_OPTIONS.find((s: any) => s.id === size);
+        if (!sizeConfig) {
+            return NextResponse.json(
+                { error: 'Invalid size' },
+                { status: 400 }
+            );
+        }
+
+        // Build the prompt using the new prompt builder
+        const promptContext: any = {
+            projectSummary: project.analysis_result?.summary || 'Проект без опису',
             keyFeatures: project.analysis_result?.key_features || [],
-            brandVoice: project.analysis_result?.brand_voice || '',
+            brandVoice: project.analysis_result?.brand_voice || 'Професійний',
             targetAudience: selectedAudience,
-            format,
-            referenceImages,
-            referenceDescription,
-        });
+            format: format,
+            referenceImages: referenceImages.length > 0 ? referenceImages : undefined,
+            referenceDescription: referenceDescription || undefined,
+        };
 
-        const negativePrompt = buildNegativePrompt();
+        const prompt = buildCreativePrompt(promptContext);
 
-        // Convert size to aspect ratio string
-        const aspectRatio = size.includes('story') || size.includes('reel') ? '9:16' : '1:1';
-
-        // Generate images
-        const imageUrls = await generateImage({
+        // Generate images using Vertex AI
+        const generationParams: any = {
             prompt,
-            negativePrompt,
-            aspectRatio,
-            numberOfImages: Math.min(quantity, 4),
-            referenceImages,
-        });
+            aspectRatio: sizeConfig.ratio,
+            numberOfImages: quantity,
+            referenceImages: referenceImages.map((img: any) => ({
+                base64: img.base64,
+                type: img.type || 'style',
+            })),
+        };
+
+        console.log('Generating images with prompt:', prompt.substring(0, 200) + '...');
+        const imageUrls = await generateImage(generationParams);
 
         // Save generated creatives to database
-        const creatives = imageUrls.map(url => ({
+        const creativesToInsert = imageUrls.map((imageUrl: string) => ({
             project_id: projectId,
+            project_name: project.name || 'Проект без назви',
             session_id: sessionId,
             target_audience: selectedAudience.name,
-            format,
-            size,
-            image_url: url,
+            format: format,
+            size: size,
+            image_url: imageUrl,
             prompt_used: prompt,
+            reference_images: referenceImages.length > 0 ? referenceImages.map((img: any) => img.base64) : null,
         }));
 
-        const { data: savedCreatives, error: saveError } = await supabase
+        const { data: insertedCreatives, error: insertError } = await supabase
             .from('generated_creatives')
-            .insert(creatives)
+            .insert(creativesToInsert)
             .select();
 
-        if (saveError) {
-            console.error('Failed to save creatives:', saveError);
-            // Still return the generated images even if saving fails
+        if (insertError) {
+            console.error('Failed to save creatives:', insertError);
+            // Don't fail the whole request if saving fails
         }
 
         return NextResponse.json({
             success: true,
-            creatives: savedCreatives || creatives,
             imageUrls,
+            creatives: insertedCreatives || [],
         });
     } catch (error) {
         console.error('Generation error:', error);

@@ -186,10 +186,24 @@ ${websiteContent.allText}
         // Save to database
         const supabase = getServerSupabase();
 
+        // Generate a project name based on URL or description
+        let projectName = 'Новий проект';
+        if (type === 'url') {
+            try {
+                const urlObj = new URL(data.url);
+                projectName = urlObj.hostname.replace('www.', '');
+            } catch (e) {
+                projectName = data.url || projectName;
+            }
+        } else if (type === 'description') {
+            projectName = data.description.substring(0, 30) + (data.description.length > 30 ? '...' : '');
+        }
+
         const { data: project, error } = await supabase
             .from('projects')
             .insert({
                 session_id: sessionId,
+                name: projectName,
                 url: type === 'url' ? data.url : null,
                 description: type === 'description' ? data.description : null,
                 screenshot_url: type === 'screenshot' ? data.screenshotUrl : null,
@@ -209,6 +223,27 @@ ${websiteContent.allText}
                 { error: 'Failed to save analysis' },
                 { status: 500 }
             );
+        }
+
+        // Save target audiences to separate table
+        if (analysisResult.target_audiences && analysisResult.target_audiences.length > 0) {
+            const audiencesToInsert = analysisResult.target_audiences.map(audience => ({
+                project_id: project.id,
+                name: audience.name,
+                description: audience.description,
+                pain_points: audience.pain_points,
+                needs: audience.needs,
+                demographics: audience.demographics || {},
+            }));
+
+            const { error: audienceError } = await supabase
+                .from('target_audiences')
+                .insert(audiencesToInsert);
+
+            if (audienceError) {
+                console.error('Failed to save target audiences:', audienceError);
+                // Don't fail the whole request if audience saving fails
+            }
         }
 
         return NextResponse.json({
