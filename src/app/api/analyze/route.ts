@@ -27,23 +27,26 @@ export async function POST(request: NextRequest) {
                     );
                 }
 
-                // Launch Puppeteer to scrape the website
-                let browser;
-                let screenshotBase64;
-                let websiteContent;
+                // Check if running on Vercel
+                const isVercel = process.env.VERCEL === '1';
+                
+                if (isVercel) {
+                    // On Vercel: analyze without screenshot (simpler, faster)
+                    analysisResult = await analyzeWebsite(data.url, undefined, undefined);
+                } else {
+                    // Local: full analysis with Puppeteer
+                    // Launch Puppeteer to scrape the website
+                    let browser;
+                    let screenshotBase64;
+                    let websiteContent;
 
-                try {
-                    // Check if running on Vercel (serverless)
-                    const isVercel = process.env.VERCEL === '1';
-                    
-                    browser = await puppeteer.launch({
-                        args: isVercel ? chromium.args : ['--no-sandbox', '--disable-setuid-sandbox'],
-                        defaultViewport: { width: 1920, height: 1080 },
-                        executablePath: isVercel 
-                            ? await chromium.executablePath() 
-                            : '/Applications/Google Chrome.app/Contents/MacOS/Google Chrome',
-                        headless: true,
-                    });
+                    try {
+                        browser = await puppeteer.launch({
+                            args: ['--no-sandbox', '--disable-setuid-sandbox'],
+                            defaultViewport: { width: 1920, height: 1080 },
+                            executablePath: '/Applications/Google Chrome.app/Contents/MacOS/Google Chrome',
+                            headless: true,
+                        });
                     const page = await browser.newPage();
 
                     // Set viewport for desktop view
@@ -150,6 +153,7 @@ ${websiteContent.allText}
                 console.log('Calling Gemini API for analysis...');
                 analysisResult = await analyzeWebsite(data.url, screenshotBase64, websiteContext);
                 console.log('Analysis completed:', JSON.stringify(analysisResult, null, 2));
+                }
                 break;
 
             case 'screenshot':
