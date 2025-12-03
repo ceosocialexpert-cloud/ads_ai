@@ -37,80 +37,22 @@
 }
 
 .main {
+  max-width: 100%;
+  margin: 0;
+  padding: 0;
+  height: calc(100vh - 70px - 70px); /* header height - bottom bar height */
+}
+
+.chatContainer {
+  height: 100%;
   max-width: 1200px;
   margin: 0 auto;
   padding: 2rem;
 }
 
-.projectSelector {
-  background: white;
-  padding: 1rem 1.5rem;
-  border-radius: 12px;
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
-  border: 1px solid var(--border-color);
-  margin-bottom: 1.5rem;
-  display: flex;
-  align-items: center;
-  gap: 1rem;
-}
 
-.projectSelector label {
-  font-weight: 600;
-  color: var(--text-primary);
-  white-space: nowrap;
-}
 
-.projectSelector .hint {
-  font-size: 0.9rem;
-  color: var(--text-secondary);
-  font-style: italic;
-}
 
-.projectSelect {
-  flex: 1;
-  padding: 0.75rem 1rem;
-  border: 1px solid var(--border-color);
-  border-radius: 8px;
-  font-size: 1rem;
-  background: white;
-  cursor: pointer;
-  transition: border-color 0.2s;
-}
-
-.projectSelect:focus {
-  outline: none;
-  border-color: var(--primary-color);
-  box-shadow: 0 0 0 3px rgba(99, 102, 241, 0.1);
-}
-
-.layout {
-  display: flex;
-  gap: 2rem;
-  height: calc(100vh - 120px);
-}
-
-.sidebar {
-  flex: 0 0 350px;
-  background: white;
-  border-radius: 12px;
-  padding: 1.5rem;
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05);
-  border: 1px solid var(--border-color);
-  overflow-y: auto;
-  max-height: calc(100vh - 120px);
-}
-
-.chatPanel {
-  flex: 1;
-  background: white;
-  border-radius: 12px;
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05);
-  border: 1px solid var(--border-color);
-  display: flex;
-  flex-direction: column;
-  overflow: hidden;
-  max-height: calc(100vh - 120px);
-}
 
 .featuresBanner {
   background: linear-gradient(135deg, var(--primary-color), #4a6fa5);
@@ -146,23 +88,6 @@
   gap: 0.5rem;
 }
 
-@media (max-width: 1024px) {
-  .layout {
-    flex-direction: column;
-    height: auto;
-  }
-
-  .sidebar {
-    flex: 0 0 auto;
-    max-height: none;
-  }
-
-  .chatPanel {
-    flex: 1;
-    max-height: none;
-  }
-}
-
 @media (max-width: 768px) {
   .headerContent {
     padding: 1rem;
@@ -175,11 +100,7 @@
     justify-content: center;
   }
 
-  .main {
+  .chatContainer {
     padding: 1rem;
-  }
-
-  .layout {
-    gap: 1rem;
   }
 }
