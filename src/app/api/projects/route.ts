@@ -81,6 +81,55 @@ export async function GET(request: NextRequest) {
     }
 }
 
+export async function POST(request: NextRequest) {
+    try {
+        const body = await request.json();
+        const { sessionId, name, url, icon } = body;
+
+        if (!sessionId || !name) {
+            return NextResponse.json(
+                { error: 'Session ID and name are required' },
+                { status: 400 }
+            );
+        }
+
+        const supabase = getServerSupabase();
+
+        // Create new project
+        const { data: project, error } = await supabase
+            .from('projects')
+            .insert({
+                session_id: sessionId,
+                name: name,
+                url: url || null,
+                description: null,
+                screenshot_url: icon || null, // Store icon as screenshot_url for now
+                analysis_result: null,
+            })
+            .select()
+            .single();
+
+        if (error) {
+            console.error('Database error:', error);
+            return NextResponse.json(
+                { error: 'Failed to create project' },
+                { status: 500 }
+            );
+        }
+
+        return NextResponse.json({
+            success: true,
+            project,
+        });
+    } catch (error) {
+        console.error('Create error:', error);
+        return NextResponse.json(
+            { error: error instanceof Error ? error.message : 'Create failed' },
+            { status: 500 }
+        );
+    }
+}
+
 export async function DELETE(request: NextRequest) {
     try {
         const { searchParams } = new URL(request.url);

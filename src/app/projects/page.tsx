@@ -64,12 +64,42 @@ export default function ProjectsPage() {
     };
 
     const handleCreateProject = async (projectData: ProjectData) => {
-        console.log('Creating project:', projectData);
-        // TODO: Implement API call to create project
-        setIsModalOpen(false);
-        alert(`Проект "${projectData.name}" створено!`);
-        // Reload projects
-        loadProjects();
+        try {
+            // Convert icon to base64 if present
+            let iconBase64 = null;
+            if (projectData.icon) {
+                iconBase64 = await new Promise<string>((resolve) => {
+                    const reader = new FileReader();
+                    reader.onloadend = () => resolve(reader.result as string);
+                    reader.readAsDataURL(projectData.icon!);
+                });
+            }
+
+            const response = await fetch('/api/projects', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    sessionId,
+                    name: projectData.name,
+                    url: projectData.url,
+                    icon: iconBase64,
+                }),
+            });
+
+            const data = await response.json();
+
+            if (data.success) {
+                setIsModalOpen(false);
+                alert(`Проект "${projectData.name}" успішно створено!`);
+                // Reload projects
+                loadProjects();
+            } else {
+                alert('Помилка створення проекту: ' + data.error);
+            }
+        } catch (error) {
+            console.error('Error creating project:', error);
+            alert('Помилка створення проекту');
+        }
     };
 
     const formatDate = (dateString: string) => {
