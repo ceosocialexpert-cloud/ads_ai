@@ -72,24 +72,29 @@ export default function ProjectDetailPage() {
 
         try {
             setIsAnalyzing(true);
+            console.log('Starting analysis for project:', project.id);
+            
             const response = await fetch('/api/analyze-project', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({ projectId: project.id }),
             });
 
+            console.log('Analysis response status:', response.status);
             const data = await response.json();
+            console.log('Analysis response data:', data);
 
             if (data.success) {
                 alert('✅ Аналіз завершено успішно!');
                 // Reload project to show new audiences
                 loadProject();
             } else {
-                alert('Помилка аналізу: ' + data.error);
+                console.error('Analysis failed:', data);
+                alert('Помилка аналізу: ' + (data.error || 'Невідома помилка'));
             }
         } catch (error) {
             console.error('Analysis error:', error);
-            alert('Помилка запуску аналізу');
+            alert('Помилка запуску аналізу: ' + (error instanceof Error ? error.message : 'Невідома помилка'));
         } finally {
             setIsAnalyzing(false);
         }

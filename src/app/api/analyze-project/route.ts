@@ -185,8 +185,12 @@ ${websiteContent}
         });
     } catch (error) {
         console.error('Analysis error:', error);
+        console.error('Error stack:', error instanceof Error ? error.stack : 'No stack trace');
         return NextResponse.json(
-            { error: error instanceof Error ? error.message : 'Analysis failed' },
+            { 
+                error: error instanceof Error ? error.message : 'Analysis failed',
+                details: error instanceof Error ? error.stack : String(error)
+            },
             { status: 500 }
         );
     }

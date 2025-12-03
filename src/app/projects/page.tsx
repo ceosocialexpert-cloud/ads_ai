@@ -137,13 +137,14 @@ export default function ProjectsPage() {
                 alert(`✅ Аналіз проекту "${createdProject.name}" завершено успішно!`);
                 loadProjects();
             } else {
-                alert('Помилка аналізу: ' + data.error);
+                console.error('Analysis error response:', data);
+                alert('Помилка аналізу: ' + (data.error || 'Невідома помилка'));
                 setIsAnalysisModalOpen(false);
                 loadProjects();
             }
         } catch (error) {
             console.error('Analysis error:', error);
-            alert('Помилка запуску аналізу');
+            alert('Помилка запуску аналізу: ' + (error instanceof Error ? error.message : 'Невідома помилка'));
             setIsAnalysisModalOpen(false);
             loadProjects();
         }
