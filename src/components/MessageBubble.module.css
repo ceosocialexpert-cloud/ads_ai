@@ -1,30 +1,31 @@
 .bubble {
     max-width: 70%;
-    padding: var(--spacing-md) var(--spacing-lg);
-    border-radius: var(--radius-lg);
+    padding: 1rem 1.25rem;
+    border-radius: 16px;
     animation: slideUp 0.3s ease-out;
     word-wrap: break-word;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
 }
 
 .user {
     align-self: flex-end;
-    background: var(--gradient-primary);
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
     color: white;
     margin-left: auto;
 }
 
 .assistant {
     align-self: flex-start;
-    background: var(--color-bg-elevated);
-    border: 1px solid var(--color-border);
-    color: var(--color-text-primary);
+    background: white;
+    border: 1px solid var(--border-color);
+    color: var(--text-primary);
 }
 
 .system {
     align-self: center;
-    background: var(--color-surface);
-    border: 1px solid var(--color-border);
-    color: var(--color-text-secondary);
+    background: #f0f9ff;
+    border: 1px solid #bae6fd;
+    color: var(--text-secondary);
     font-size: 0.875rem;
     text-align: center;
     max-width: 90%;
@@ -37,7 +38,7 @@
 
 .timestamp {
     font-size: 0.75rem;
-    margin-top: var(--spacing-xs);
+    margin-top: 0.5rem;
     opacity: 0.6;
 }
 

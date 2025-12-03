@@ -2,87 +2,110 @@
     display: flex;
     flex-direction: column;
     height: 100%;
-    max-width: 900px;
-    margin: 0 auto;
-    padding: 0 1rem;
-    background: var(--color-bg-secondary);
-    border-radius: var(--radius-xl);
+    background: white;
+    border-radius: 12px;
     overflow: hidden;
-    border: 1px solid var(--color-border);
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05);
+    border: 1px solid var(--border-color);
 }
 
 .messages {
     flex: 1;
     overflow-y: auto;
-    padding: var(--spacing-lg);
+    padding: 1.5rem;
     display: flex;
     flex-direction: column;
-    gap: var(--spacing-md);
+    gap: 1rem;
+    background: var(--background-light);
 }
 
 .welcome {
     text-align: center;
-    padding: var(--spacing-2xl);
+    padding: 3rem 2rem;
     animation: fadeIn 0.5s ease-out;
 }
 
 .welcome h2 {
-    margin-bottom: var(--spacing-md);
+    margin-bottom: 1rem;
     font-size: 2rem;
+    color: var(--text-primary);
 }
 
 .welcome p {
-    margin-bottom: var(--spacing-sm);
-    color: var(--color-text-secondary);
+    margin-bottom: 0.5rem;
+    color: var(--text-secondary);
+    line-height: 1.6;
 }
 
 .quickActions {
     display: flex;
-    gap: var(--spacing-md);
+    gap: 1rem;
     justify-content: center;
-    margin-top: var(--spacing-xl);
+    margin-top: 2rem;
     flex-wrap: wrap;
 }
 
 .loadingMessage {
     display: flex;
     align-items: center;
-    gap: var(--spacing-sm);
-    padding: var(--spacing-md);
-    color: var(--color-text-secondary);
+    gap: 0.5rem;
+    padding: 1rem;
+    color: var(--text-secondary);
     animation: fadeIn 0.3s ease-out;
 }
 
 .inputArea {
-    border-top: 1px solid var(--color-border);
-    background: var(--color-bg-elevated);
-    padding: var(--spacing-lg);
+    border-top: 1px solid var(--border-color);
+    background: white;
+    padding: 1.5rem;
 }
 
 .chatInput {
     display: flex;
-    gap: var(--spacing-sm);
+    gap: 0.5rem;
     align-items: center;
 }
 
 .chatInput input {
     flex: 1;
+    padding: 0.75rem 1rem;
+    border: 1px solid var(--border-color);
+    border-radius: 8px;
+    font-size: 1rem;
+    transition: border-color 0.2s;
+}
+
+.chatInput input:focus {
+    outline: none;
+    border-color: var(--primary-color);
+    box-shadow: 0 0 0 3px rgba(99, 102, 241, 0.1);
 }
 
 .specialMode {
     display: flex;
     flex-direction: column;
-    gap: var(--spacing-md);
+    gap: 1rem;
 }
 
 .specialMode input,
 .specialMode textarea {
     width: 100%;
+    padding: 0.75rem 1rem;
+    border: 1px solid var(--border-color);
+    border-radius: 8px;
+    font-size: 1rem;
+}
+
+.specialMode input:focus,
+.specialMode textarea:focus {
+    outline: none;
+    border-color: var(--primary-color);
+    box-shadow: 0 0 0 3px rgba(99, 102, 241, 0.1);
 }
 
 .specialMode>div:last-child {
     display: flex;
-    gap: var(--spacing-sm);
+    gap: 0.5rem;
     justify-content: flex-end;
 }
 
@@ -101,20 +124,20 @@
 .filePreviewContainer {
     display: grid;
     grid-template-columns: repeat(auto-fill, minmax(80px, 1fr));
-    gap: var(--spacing-sm);
-    padding: var(--spacing-md);
-    background: var(--color-bg-secondary);
-    border-radius: var(--radius-lg);
-    margin-bottom: var(--spacing-sm);
+    gap: 0.5rem;
+    padding: 1rem;
+    background: var(--background-light);
+    border-radius: 8px;
+    margin-bottom: 0.5rem;
 }
 
 .filePreview {
     position: relative;
     aspect-ratio: 1;
-    border-radius: var(--radius-md);
+    border-radius: 8px;
     overflow: hidden;
-    border: 2px solid var(--color-border);
-    background: var(--color-bg-elevated);
+    border: 2px solid var(--border-color);
+    background: white;
 }
 
 .filePreview img {
