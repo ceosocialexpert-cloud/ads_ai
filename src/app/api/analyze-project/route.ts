@@ -1,37 +1,57 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { GoogleGenerativeAI } from '@google/generative-ai';
 import { getServerSupabase } from '@/lib/supabase';
-import puppeteer from 'puppeteer';
 
 const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY || '');
 
 async function scrapeWebsite(url: string): Promise<string> {
-    const browser = await puppeteer.launch({
-        headless: true,
-        args: ['--no-sandbox', '--disable-setuid-sandbox'],
-    });
-
     try {
-        const page = await browser.newPage();
-        await page.goto(url, { waitUntil: 'networkidle0', timeout: 30000 });
-
-        const content = await page.evaluate(() => {
-            const title = document.title;
-            const metaDescription = document.querySelector('meta[name="description"]')?.getAttribute('content') || '';
-            const headings = Array.from(document.querySelectorAll('h1, h2, h3')).map(el => el.textContent?.trim()).filter(Boolean);
-            const paragraphs = Array.from(document.querySelectorAll('p')).map(el => el.textContent?.trim()).filter(Boolean);
-
-            return {
-                title,
-                metaDescription,
-                headings: headings.slice(0, 10),
-                paragraphs: paragraphs.slice(0, 20),
-            };
+        // Use simple fetch instead of Puppeteer for Vercel compatibility
+        const response = await fetch(url, {
+            headers: {
+                'User-Agent': 'Mozilla/5.0 (compatible; AdsAI/1.0; +https://ads-ai.vercel.app)',
+            },
         });
 
-        return JSON.stringify(content);
-    } finally {
-        await browser.close();
+        if (!response.ok) {
+            throw new Error(`Failed to fetch: ${response.status}`);
+        }
+
+        const html = await response.text();
+
+        // Simple HTML parsing
+        const titleMatch = html.match(/<title[^>]*>([^<]+)<\/title>/i);
+        const title = titleMatch ? titleMatch[1] : '';
+
+        const metaDescMatch = html.match(/<meta[^>]*name=["']description["'][^>]*content=["']([^"']+)["']/i);
+        const metaDescription = metaDescMatch ? metaDescMatch[1] : '';
+
+        // Extract headings
+        const h1Matches = html.match(/<h1[^>]*>([^<]+)<\/h1>/gi) || [];
+        const h2Matches = html.match(/<h2[^>]*>([^<]+)<\/h2>/gi) || [];
+        const h3Matches = html.match(/<h3[^>]*>([^<]+)<\/h3>/gi) || [];
+        
+        const headings = [...h1Matches, ...h2Matches, ...h3Matches]
+            .map(h => h.replace(/<[^>]+>/g, '').trim())
+            .filter(Boolean)
+            .slice(0, 10);
+
+        // Extract paragraphs
+        const pMatches = html.match(/<p[^>]*>([^<]+)<\/p>/gi) || [];
+        const paragraphs = pMatches
+            .map(p => p.replace(/<[^>]+>/g, '').trim())
+            .filter(text => text.length > 20)
+            .slice(0, 20);
+
+        return JSON.stringify({
+            title,
+            metaDescription,
+            headings,
+            paragraphs,
+        });
+    } catch (error) {
+        console.error('Scraping error:', error);
+        throw new Error('Failed to scrape website: ' + (error instanceof Error ? error.message : 'Unknown error'));
     }
 }
 
