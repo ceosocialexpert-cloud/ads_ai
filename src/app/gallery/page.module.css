@@ -1,0 +1,124 @@
+.container {
+    min-height: 100vh;
+    display: flex;
+    flex-direction: column;
+    background: var(--color-bg-primary);
+}
+
+.header {
+    background: var(--color-bg-secondary);
+    border-bottom: 1px solid var(--color-border);
+    padding: var(--spacing-lg) 0;
+    position: sticky;
+    top: 0;
+    z-index: 100;
+    backdrop-filter: blur(10px);
+    -webkit-backdrop-filter: blur(10px);
+}
+
+.headerContent {
+    max-width: 1600px;
+    margin: 0 auto;
+    padding: 0 var(--spacing-xl);
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+.logo {
+    display: flex;
+    align-items: center;
+    gap: var(--spacing-md);
+    font-size: 1.5rem;
+    font-weight: 800;
+    background: var(--gradient-primary);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+}
+
+.logoIcon {
+    font-size: 2rem;
+    filter: drop-shadow(0 0 10px rgba(99, 102, 241, 0.5));
+}
+
+.main {
+    flex: 1;
+    padding: var(--spacing-xl);
+    max-width: 1600px;
+    width: 100%;
+    margin: 0 auto;
+    display: flex;
+    flex-direction: column;
+    gap: var(--spacing-xl);
+}
+
+.filters {
+    display: flex;
+    gap: var(--spacing-md);
+    flex-wrap: wrap;
+    padding: var(--spacing-lg);
+    background: var(--color-bg-elevated);
+    border-radius: var(--radius-lg);
+    border: 1px solid var(--color-border);
+}
+
+.searchBox {
+    flex: 1;
+    min-width: 300px;
+}
+
+.select {
+    min-width: 200px;
+}
+
+.grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+    gap: var(--spacing-lg);
+    animation: fadeIn 0.5s ease-out;
+}
+
+.emptyState {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: var(--spacing-md);
+    padding: var(--spacing-2xl);
+    text-align: center;
+    color: var(--color-text-secondary);
+    background: var(--color-bg-secondary);
+    border-radius: var(--radius-xl);
+    border: 2px dashed var(--color-border);
+    margin-top: var(--spacing-xl);
+}
+
+.loadMore {
+    display: flex;
+    justify-content: center;
+    padding: var(--spacing-xl);
+}
+
+@keyframes fadeIn {
+    from {
+        opacity: 0;
+        transform: translateY(20px);
+    }
+
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+@media (max-width: 768px) {
+    .filters {
+        flex-direction: column;
+    }
+
+    .searchBox,
+    .select {
+        width: 100%;
+    }
+}

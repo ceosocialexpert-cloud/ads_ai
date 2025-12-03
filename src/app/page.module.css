@@ -1,141 +1,105 @@
-.page {
-  --background: #fafafa;
-  --foreground: #fff;
-
-  --text-primary: #000;
-  --text-secondary: #666;
-
-  --button-primary-hover: #383838;
-  --button-secondary-hover: #f2f2f2;
-  --button-secondary-border: #ebebeb;
-
-  display: flex;
+.container {
   min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+  background: var(--color-bg-primary);
+}
+
+.header {
+  background: var(--color-bg-secondary);
+  border-bottom: 1px solid var(--color-border);
+  padding: var(--spacing-lg) 0;
+  position: sticky;
+  top: 0;
+  z-index: 100;
+  backdrop-filter: blur(10px);
+  -webkit-backdrop-filter: blur(10px);
+}
+
+.headerContent {
+  max-width: 1600px;
+  margin: 0 auto;
+  padding: 0 var(--spacing-xl);
+  display: flex;
+  justify-content: space-between;
   align-items: center;
-  justify-content: center;
-  font-family: var(--font-geist-sans);
-  background-color: var(--background);
+}
+
+.logo {
+  display: flex;
+  align-items: center;
+  gap: var(--spacing-md);
+  font-size: 1.5rem;
+  font-weight: 800;
+  background: var(--gradient-primary);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+
+.logoIcon {
+  font-size: 2rem;
+  filter: drop-shadow(0 0 10px rgba(99, 102, 241, 0.5));
+}
+
+.nav {
+  display: flex;
+  gap: var(--spacing-md);
+  align-items: center;
 }
 
 .main {
-  display: flex;
-  min-height: 100vh;
+  flex: 1;
+  padding: var(--spacing-xl);
+  max-width: 1600px;
   width: 100%;
-  max-width: 800px;
-  flex-direction: column;
-  align-items: flex-start;
-  justify-content: space-between;
-  background-color: var(--foreground);
-  padding: 120px 60px;
+  margin: 0 auto;
 }
 
-.intro {
+.layout {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: var(--spacing-xl);
+  height: calc(100vh - 120px);
+}
+
+.layout:has(.sidebar) {
+  grid-template-columns: 500px 1fr;
+}
+
+.sidebar {
+  overflow-y: auto;
+  animation: slideInLeft 0.5s ease-out;
+}
+
+.chatPanel {
   display: flex;
   flex-direction: column;
-  align-items: flex-start;
-  text-align: left;
-  gap: 24px;
+  min-height: 0;
 }
 
-.intro h1 {
-  max-width: 320px;
-  font-size: 40px;
-  font-weight: 600;
-  line-height: 48px;
-  letter-spacing: -2.4px;
-  text-wrap: balance;
-  color: var(--text-primary);
-}
-
-.intro p {
-  max-width: 440px;
-  font-size: 18px;
-  line-height: 32px;
-  text-wrap: balance;
-  color: var(--text-secondary);
-}
-
-.intro a {
-  font-weight: 500;
-  color: var(--text-primary);
-}
-
-.ctas {
-  display: flex;
-  flex-direction: row;
-  width: 100%;
-  max-width: 440px;
-  gap: 16px;
-  font-size: 14px;
-}
-
-.ctas a {
-  display: flex;
-  justify-content: center;
-  align-items: center;
-  height: 40px;
-  padding: 0 16px;
-  border-radius: 128px;
-  border: 1px solid transparent;
-  transition: 0.2s;
-  cursor: pointer;
-  width: fit-content;
-  font-weight: 500;
-}
-
-a.primary {
-  background: var(--text-primary);
-  color: var(--background);
-  gap: 8px;
-}
-
-a.secondary {
-  border-color: var(--button-secondary-border);
-}
-
-/* Enable hover only on non-touch devices */
-@media (hover: hover) and (pointer: fine) {
-  a.primary:hover {
-    background: var(--button-primary-hover);
-    border-color: transparent;
+@keyframes slideInLeft {
+  from {
+    opacity: 0;
+    transform: translateX(-30px);
   }
 
-  a.secondary:hover {
-    background: var(--button-secondary-hover);
-    border-color: transparent;
+  to {
+    opacity: 1;
+    transform: translateX(0);
   }
 }
 
-@media (max-width: 600px) {
-  .main {
-    padding: 48px 24px;
+@media (max-width: 1200px) {
+  .layout:has(.sidebar) {
+    grid-template-columns: 1fr;
   }
 
-  .intro {
-    gap: 16px;
+  .sidebar {
+    order: 2;
   }
 
-  .intro h1 {
-    font-size: 32px;
-    line-height: 40px;
-    letter-spacing: -1.92px;
-  }
-}
-
-@media (prefers-color-scheme: dark) {
-  .logo {
-    filter: invert();
-  }
-
-  .page {
-    --background: #000;
-    --foreground: #000;
-
-    --text-primary: #ededed;
-    --text-secondary: #999;
-
-    --button-primary-hover: #ccc;
-    --button-secondary-hover: #1a1a1a;
-    --button-secondary-border: #1a1a1a;
+  .chatPanel {
+    order: 1;
   }
 }

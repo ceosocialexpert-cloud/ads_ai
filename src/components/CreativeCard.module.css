@@ -1,0 +1,95 @@
+.card {
+    background: var(--color-bg-elevated);
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius-lg);
+    overflow: hidden;
+    cursor: pointer;
+    transition: all var(--transition-base);
+}
+
+.card:hover {
+    transform: translateY(-4px);
+    box-shadow: var(--shadow-lg);
+    border-color: var(--color-border-hover);
+}
+
+.imageContainer {
+    position: relative;
+    aspect-ratio: 1;
+    overflow: hidden;
+    background: var(--color-bg-secondary);
+}
+
+.imageContainer img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    transition: transform var(--transition-slow);
+}
+
+.card:hover .imageContainer img {
+    transform: scale(1.05);
+}
+
+.overlay {
+    position: absolute;
+    inset: 0;
+    background: rgba(0, 0, 0, 0.7);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    opacity: 0;
+    transition: opacity var(--transition-base);
+}
+
+.card:hover .overlay {
+    opacity: 1;
+}
+
+.info {
+    padding: var(--spacing-md);
+    display: flex;
+    flex-direction: column;
+    gap: var(--spacing-sm);
+}
+
+.meta {
+    display: flex;
+    gap: var(--spacing-sm);
+    flex-wrap: wrap;
+}
+
+.format,
+.size {
+    padding: var(--spacing-xs) var(--spacing-sm);
+    background: var(--color-surface);
+    border-radius: var(--radius-sm);
+    font-size: 0.75rem;
+    font-weight: 500;
+    color: var(--color-text-secondary);
+}
+
+.format {
+    background: var(--color-primary-light);
+    color: var(--color-primary);
+}
+
+.audience {
+    display: flex;
+    gap: var(--spacing-xs);
+    font-size: 0.875rem;
+}
+
+.label {
+    color: var(--color-text-tertiary);
+    font-weight: 500;
+}
+
+.value {
+    color: var(--color-text-secondary);
+}
+
+.date {
+    font-size: 0.75rem;
+    color: var(--color-text-tertiary);
+}

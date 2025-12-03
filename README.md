@@ -1,36 +1,130 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# AI Creative Generator - Налаштування
 
-## Getting Started
+## 🚀 Швидкий старт
 
-First, run the development server:
+### 1. Налаштування Supabase
+
+#### Крок 1: Створення проекту
+1. Перейдіть на https://supabase.com
+2. Зареєструйтесь або увійдіть
+3. Натисніть **"New Project"**
+4. Заповніть форму:
+   - **Name**: `ai-creative-generator`
+   - **Database Password**: створіть надійний пароль (збережіть його!)
+   - **Region**: оберіть найближчий регіон
+5. Натисніть **"Create new project"** та зачекайте 2-3 хвилини
+
+#### Крок 2: Запуск міграції бази даних
+1. У вашому проекті Supabase перейдіть в **SQL Editor** (ліва панель)
+2. Натисніть **"New query"**
+3. Відкрийте файл `supabase/migrations/001_initial_schema.sql` у цьому проекті
+4. Скопіюйте **весь** SQL код
+5. Вставте в SQL Editor
+6. Натисніть **"Run"** або `Ctrl+Enter`
+7. Ви повинні побачити повідомлення "Success. No rows returned"
+
+#### Крок 3: Отримання API ключів
+1. Перейдіть в **Settings** → **API** (ліва панель)
+2. Знайдіть та скопіюйте:
+   - **Project URL** (наприклад: `https://xxxxx.supabase.co`)
+   - **anon public** key (довгий ключ, починається з `eyJ...`)
+   - **service_role** key (натисніть "Reveal" щоб побачити)
+
+#### Крок 4: Оновлення .env.local
+1. Відкрийте файл `.env.local` у корені проекту
+2. Замініть placeholder значення на ваші реальні ключі:
 
 ```bash
-npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
+NEXT_PUBLIC_SUPABASE_URL=https://your-project-id.supabase.co
+NEXT_PUBLIC_SUPABASE_ANON_KEY=eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...
+SUPABASE_SERVICE_ROLE_KEY=eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+### 2. Налаштування Gemini API
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+1. Перейдіть на https://aistudio.google.com/app/apikey
+2. Натисніть **"Create API key"**
+3. Скопіюйте ключ
+4. Додайте в `.env.local`:
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+```bash
+GEMINI_API_KEY=your_gemini_api_key_here
+```
 
-## Learn More
+### 3. Налаштування Vertex AI (для генерації зображень)
 
-To learn more about Next.js, take a look at the following resources:
+#### Крок 1: Створення Google Cloud проекту
+1. Перейдіть на https://console.cloud.google.com
+2. Створіть новий проект або оберіть існуючий
+3. Увімкніть **Vertex AI API**:
+   - Перейдіть в **APIs & Services** → **Library**
+   - Знайдіть "Vertex AI API"
+   - Натисніть **"Enable"**
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+#### Крок 2: Створення Service Account
+1. Перейдіть в **IAM & Admin** → **Service Accounts**
+2. Натисніть **"Create Service Account"**
+3. Заповніть:
+   - **Name**: `ai-creative-generator`
+   - **Role**: `Vertex AI User`
+4. Натисніть **"Create and Continue"**
+5. Натисніть **"Done"**
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
+#### Крок 3: Створення ключа
+1. Знайдіть створений Service Account у списку
+2. Натисніть на нього
+3. Перейдіть на вкладку **"Keys"**
+4. Натисніть **"Add Key"** → **"Create new key"**
+5. Оберіть **JSON** формат
+6. Натисніть **"Create"** - файл завантажиться
 
-## Deploy on Vercel
+#### Крок 4: Додання ключа в проект
+1. Перемістіть завантажений JSON файл в корінь проекту
+2. Перейменуйте його на `service-account-key.json`
+3. Додайте в `.env.local`:
 
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
+```bash
+VERTEX_AI_PROJECT_ID=your-gcp-project-id
+VERTEX_AI_LOCATION=us-central1
+GOOGLE_APPLICATION_CREDENTIALS=./service-account-key.json
+```
 
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+### 4. Запуск проекту
+
+```bash
+# Перезапустіть dev сервер
+npm run dev
+```
+
+Відкрийте http://localhost:3002 у браузері!
+
+## ✅ Перевірка налаштування
+
+Якщо все налаштовано правильно:
+- ✅ Чат інтерфейс відкривається
+- ✅ Можна надіслати повідомлення
+- ✅ Можна проаналізувати проект (URL/скріншот/опис)
+- ✅ З'являються сегменти ЦА
+- ✅ Можна згенерувати креативи
+- ✅ Креативи зберігаються в галереї
+
+## 🆘 Проблеми?
+
+### Помилка "Invalid supabaseUrl"
+- Перевірте, чи правильно скопійовано URL з Supabase
+- URL має починатися з `https://`
+
+### Помилка при генерації зображень
+- Перевірте, чи увімкнено Vertex AI API
+- Перевірте, чи правильний Project ID
+- Перевірте, чи файл `service-account-key.json` існує
+
+### Помилка при аналізі
+- Перевірте Gemini API ключ
+- Переконайтесь, що ключ активний
+
+## 📚 Додаткова інформація
+
+- [Документація Supabase](https://supabase.com/docs)
+- [Документація Gemini API](https://ai.google.dev/docs)
+- [Документація Vertex AI](https://cloud.google.com/vertex-ai/docs)
