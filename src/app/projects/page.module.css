@@ -44,6 +44,14 @@
 
 .headerSection {
   margin-bottom: 2rem;
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  gap: 2rem;
+}
+
+.headerSection > div {
+  flex: 1;
 }
 
 .headerSection h2 {

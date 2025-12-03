@@ -5,12 +5,15 @@ import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import { getSessionId } from '@/lib/session';
 import { Project } from '@/lib/supabase';
+import CreateProjectModal from '@/components/CreateProjectModal';
+import type { ProjectData } from '@/components/CreateProjectModal';
 import styles from './page.module.css';
 
 export default function ProjectsPage() {
     const [projects, setProjects] = useState<Project[]>([]);
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState<string | null>(null);
+    const [isModalOpen, setIsModalOpen] = useState(false);
     const router = useRouter();
     const sessionId = getSessionId();
 
@@ -60,6 +63,15 @@ export default function ProjectsPage() {
         }
     };
 
+    const handleCreateProject = async (projectData: ProjectData) => {
+        console.log('Creating project:', projectData);
+        // TODO: Implement API call to create project
+        setIsModalOpen(false);
+        alert(`Проект "${projectData.name}" створено!`);
+        // Reload projects
+        loadProjects();
+    };
+
     const formatDate = (dateString: string) => {
         const date = new Date(dateString);
         return date.toLocaleDateString('uk-UA', {
@@ -91,8 +103,16 @@ export default function ProjectsPage() {
             <main className={styles.main}>
                 <div className={styles.content}>
                     <div className={styles.headerSection}>
-                        <h2>Збережені проекти</h2>
-                        <p>Тут ви можете переглядати та керувати своїми збереженими проектами та цільовими аудиторіями</p>
+                        <div>
+                            <h2>Збережені проекти</h2>
+                            <p>Тут ви можете переглядати та керувати своїми збереженими проектами та цільовими аудиторіями</p>
+                        </div>
+                        <button 
+                            className="btn btn-primary"
+                            onClick={() => setIsModalOpen(true)}
+                        >
+                            + Створити проект
+                        </button>
                     </div>
 
                     {loading ? (
@@ -111,9 +131,12 @@ export default function ProjectsPage() {
                         <div className={styles.emptyState}>
                             <h3>У вас ще немає збережених проектів</h3>
                             <p>Проведіть аналіз сайту або опису в головному інтерфейсі, щоб створити свій перший проект.</p>
-                            <Link href="/" className="btn btn-primary">
+                            <button 
+                                className="btn btn-primary"
+                                onClick={() => setIsModalOpen(true)}
+                            >
                                 Створити проект
-                            </Link>
+                            </button>
                         </div>
                     ) : (
                         <div className={styles.projectsGrid}>
@@ -162,6 +185,13 @@ export default function ProjectsPage() {
                     )}
                 </div>
             </main>
+
+            {/* Create Project Modal */}
+            <CreateProjectModal
+                isOpen={isModalOpen}
+                onClose={() => setIsModalOpen(false)}
+                onSubmit={handleCreateProject}
+            />
         </div>
     );
 }
