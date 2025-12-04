@@ -29,18 +29,40 @@ function cleanMarkdown(text: string): string {
 export async function POST(request: NextRequest) {
     try {
         const body = await request.json();
-        const { message, sessionId, history } = body;
+        const { message, sessionId, history, systemMessage, saveOnly, metadata } = body;
 
-        if (!sessionId || !message) {
+        if (!sessionId) {
             return NextResponse.json(
-                { error: 'Session ID and message are required' },
+                { error: 'Session ID is required' },
+                { status: 400 }
+            );
+        }
+
+        const supabase = getServerSupabase();
+
+        // Handle system message save only
+        if (saveOnly && systemMessage) {
+            const role = message === 'assistant' ? 'assistant' : 'system';
+            await supabase.from('chat_messages').insert({
+                session_id: sessionId,
+                role: role,
+                content: systemMessage,
+                metadata: metadata || null,
+            });
+
+            return NextResponse.json({
+                success: true,
+            });
+        }
+        
+        if (!message) {
+            return NextResponse.json(
+                { error: 'Message is required' },
                 { status: 400 }
             );
         }
 
         // Save user message
-        const supabase = getServerSupabase();
-
         await supabase.from('chat_messages').insert({
             session_id: sessionId,
             role: 'user',
@@ -99,21 +121,54 @@ export async function GET(request: NextRequest) {
             .order('created_at', { ascending: true });
 
         if (error) {
-            console.error('Database error:', error);
-            return NextResponse.json(
-                { error: 'Failed to fetch messages' },
-                { status: 500 }
-            );
+            throw error;
         }
 
         return NextResponse.json({
             success: true,
-            messages,
+            messages: messages || [],
         });
     } catch (error) {
-        console.error('Fetch error:', error);
+        console.error('Failed to fetch messages:', error);
         return NextResponse.json(
-            { error: error instanceof Error ? error.message : 'Fetch failed' },
+            { error: error instanceof Error ? error.message : 'Failed to fetch messages' },
+            { status: 500 }
+        );
+    }
+}
+
+export async function DELETE(request: NextRequest) {
+    try {
+        const { searchParams } = new URL(request.url);
+        const sessionId = searchParams.get('sessionId');
+
+        if (!sessionId) {
+            return NextResponse.json(
+                { error: 'Session ID is required' },
+                { status: 400 }
+            );
+        }
+
+        const supabase = getServerSupabase();
+
+        // Delete all chat messages for this session
+        const { error } = await supabase
+            .from('chat_messages')
+            .delete()
+            .eq('session_id', sessionId);
+
+        if (error) {
+            throw error;
+        }
+
+        return NextResponse.json({
+            success: true,
+            message: 'Chat history cleared',
+        });
+    } catch (error) {
+        console.error('Failed to clear chat history:', error);
+        return NextResponse.json(
+            { error: error instanceof Error ? error.message : 'Failed to clear chat history' },
             { status: 500 }
         );
     }

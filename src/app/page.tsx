@@ -10,6 +10,8 @@ import styles from './page.module.css';
 export default function Home() {
   const [currentProject, setCurrentProject] = useState<{
     id: string;
+    name?: string;
+    sub_projects?: any[];
     analysis: any;
   } | null>(null);
   const [selectedProjectId, setSelectedProjectId] = useState<string | null>(null);
@@ -24,6 +26,14 @@ export default function Home() {
   useEffect(() => {
     loadAvailableProjects();
     loadChatHistory();
+  }, []);
+
+  // Add overflow-hidden to body for home page only
+  useEffect(() => {
+    document.body.style.overflow = 'hidden';
+    return () => {
+      document.body.style.overflow = '';
+    };
   }, []);
 
   // Check for saved project/audience selection
@@ -46,11 +56,18 @@ export default function Home() {
 
   const loadAvailableProjects = async () => {
     try {
+      console.log('Loading available projects for session:', sessionId);
       const response = await fetch(`/api/projects?sessionId=${sessionId}`);
       const data = await response.json();
+      
+      console.log('Projects API response:', data);
+      console.log('Projects count:', data.projects?.length);
 
       if (data.success) {
         setAvailableProjects(data.projects || []);
+        console.log('Available projects set to:', data.projects);
+      } else {
+        console.error('Failed to load projects - API returned error:', data.error);
       }
     } catch (error) {
       console.error('Failed to load projects:', error);
@@ -78,6 +95,8 @@ export default function Home() {
       if (data.success) {
         setCurrentProject({
           id: data.project.id,
+          name: data.project.name,
+          sub_projects: data.project.sub_projects || [],
           analysis: {
             target_audiences: data.project.target_audiences || []
           }
@@ -97,8 +116,10 @@ export default function Home() {
   };
 
   const handleAnalysisComplete = (projectId: string, analysis: any) => {
+    const project = availableProjects.find(p => p.id === projectId);
     setCurrentProject({
       id: projectId,
+      name: project?.name || 'Проект',
       analysis,
     });
     // Reload projects list to include new project

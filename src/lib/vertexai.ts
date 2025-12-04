@@ -32,109 +32,117 @@ export async function generateImage(params: GenerationParams): Promise<string[]>
         console.log('Base prompt:', prompt.substring(0, 300));
         console.log('Reference images count:', referenceImages.length);
         console.log('Aspect ratio:', aspectRatio);
+        console.log('Number of images to generate:', numberOfImages);
 
-        const model = genAI.getGenerativeModel({ model: modelName });
+        const allImageUrls: string[] = [];
 
-        // Build multimodal content array
-        const contentParts: any[] = [];
+        // Генеруємо кілька зображень в циклі
+        for (let imageIndex = 0; imageIndex < numberOfImages; imageIndex++) {
+            console.log(`\n--- Generating image ${imageIndex + 1}/${numberOfImages} ---`);
 
-        // Add the main text prompt
-        let textPrompt = prompt;
+            const model = genAI.getGenerativeModel({ model: modelName });
 
-        if (negativePrompt) {
-            textPrompt += `\n\nNegative prompt (avoid these): ${negativePrompt}`;
-        }
+            // Build multimodal content array
+            const contentParts: any[] = [];
 
-        textPrompt += `\n\nAspect Ratio: ${aspectRatio}`;
-        textPrompt += `\n\nIMPORTANT: Generate a high-quality advertising image that matches ALL the requirements above.`;
+            // Add the main text prompt
+            let textPrompt = prompt;
 
-        contentParts.push(textPrompt);
-
-        // Add reference images directly to the generation request
-        if (referenceImages.length > 0) {
-            console.log('Adding reference images to generation request...');
-
-            for (let i = 0; i < referenceImages.length; i++) {
-                const refImage = referenceImages[i];
-                console.log(`Adding reference image ${i + 1} (type: ${refImage.type})`);
-
-                // Add instruction before each image
-                let imageInstruction = '';
-                if (refImage.type === 'style') {
-                    imageInstruction = `\n\n🎨 REFERENCE STYLE IMAGE ${i + 1}: Use the exact visual style, colors, typography, and layout from this image:`;
-                } else if (refImage.type === 'logo') {
-                    imageInstruction = `\n\n🏷️ LOGO IMAGE ${i + 1}: Include this logo/brand element in the generated image:`;
-                } else {
-                    imageInstruction = `\n\n👤 SUBJECT IMAGE ${i + 1}: Feature this subject/product in the generated image:`;
-                }
-
-                contentParts.push(imageInstruction);
-                contentParts.push({
-                    inlineData: {
-                        mimeType: 'image/jpeg',
-                        data: refImage.base64,
-                    },
-                });
+            if (negativePrompt) {
+                textPrompt += `\n\nNegative prompt (avoid these): ${negativePrompt}`;
             }
-        }
 
-        console.log('=== SENDING TO MODEL ===');
-        console.log('Content parts:', contentParts.length);
-        console.log('Text prompt:', textPrompt.substring(0, 200) + '...');
+            textPrompt += `\n\nAspect Ratio: ${aspectRatio}`;
 
-        const result = await model.generateContent(contentParts);
-        const response = await result.response;
+            // Додаємо варіативність для кожного зображення
+            if (numberOfImages > 1) {
+                textPrompt += `\n\n⚡ VARIATION ${imageIndex + 1}: Create a unique variation with different visual elements, composition, or style while maintaining the core message and requirements.`;
+            }
 
-        console.log('Response received from model');
+            textPrompt += `\n\nIMPORTANT: Generate a high-quality advertising image that matches ALL the requirements above.`;
 
-        const candidates = response.candidates;
-        if (!candidates || candidates.length === 0) {
-            console.error('No candidates in response');
-            throw new Error('No candidates returned');
-        }
+            contentParts.push(textPrompt);
 
-        console.log('Candidates count:', candidates.length);
+            // Add reference images directly to the generation request
+            if (referenceImages.length > 0) {
+                console.log('Adding reference images to generation request...');
 
-        const imageUrls: string[] = [];
+                for (let i = 0; i < referenceImages.length; i++) {
+                    const refImage = referenceImages[i];
+                    console.log(`Adding reference image ${i + 1} (type: ${refImage.type})`);
 
-        for (let i = 0; i < candidates.length; i++) {
-            const candidate = candidates[i];
-            const responseParts = candidate.content?.parts;
+                    // Add instruction before each image
+                    let imageInstruction = '';
+                    if (refImage.type === 'style') {
+                        imageInstruction = `\n\n🎨 REFERENCE STYLE IMAGE ${i + 1}: Use the exact visual style, colors, typography, and layout from this image:`;
+                    } else if (refImage.type === 'logo') {
+                        imageInstruction = `\n\n🏷️ LOGO IMAGE ${i + 1}: Include this logo/brand element in the generated image:`;
+                    } else {
+                        imageInstruction = `\n\n👤 SUBJECT IMAGE ${i + 1}: Feature this subject/product in the generated image:`;
+                    }
 
-            if (responseParts) {
-                console.log(`Candidate ${i + 1} has ${responseParts.length} parts`);
+                    contentParts.push(imageInstruction);
+                    contentParts.push({
+                        inlineData: {
+                            mimeType: 'image/jpeg',
+                            data: refImage.base64,
+                        },
+                    });
+                }
+            }
 
-                for (let j = 0; j < responseParts.length; j++) {
-                    const part = responseParts[j];
+            console.log('=== SENDING TO MODEL ===');
+            console.log('Content parts:', contentParts.length);
+            console.log('Text prompt:', textPrompt.substring(0, 200) + '...');
 
-                    if (part.inlineData && part.inlineData.mimeType.startsWith('image/')) {
-                        console.log(`Found image in candidate ${i + 1}, part ${j + 1}`);
-                        const base64Image = part.inlineData.data;
-                        const imageUrl = await uploadToStorage(base64Image);
-                        imageUrls.push(imageUrl);
-                        console.log('Image uploaded:', imageUrl);
-                    } else if (part.text) {
-                        console.log(`Part ${j + 1} is text:`, part.text.substring(0, 100));
+            const result = await model.generateContent(contentParts);
+            const response = await result.response;
+
+            console.log('Response received from model');
+
+            const candidates = response.candidates;
+            if (!candidates || candidates.length === 0) {
+                console.error('No candidates in response');
+                throw new Error('No candidates returned');
+            }
+
+            console.log('Candidates count:', candidates.length);
+
+            // Обробляємо відповідь та зберігаємо зображення
+            for (let i = 0; i < candidates.length; i++) {
+                const candidate = candidates[i];
+                const responseParts = candidate.content?.parts;
+
+                if (responseParts) {
+                    console.log(`Candidate ${i + 1} has ${responseParts.length} parts`);
+
+                    for (let j = 0; j < responseParts.length; j++) {
+                        const part = responseParts[j];
+
+                        if (part.inlineData && part.inlineData.mimeType.startsWith('image/')) {
+                            console.log(`Found image in candidate ${i + 1}, part ${j + 1}`);
+                            const base64Image = part.inlineData.data;
+                            const imageUrl = await uploadToStorage(base64Image);
+                            allImageUrls.push(imageUrl);
+                            console.log('Image uploaded:', imageUrl);
+                        } else if (part.text) {
+                            console.log(`Part ${j + 1} is text:`, part.text.substring(0, 100));
+                        }
                     }
                 }
             }
+
+            console.log(`✅ Image ${imageIndex + 1}/${numberOfImages} generated`);
         }
 
-        if (imageUrls.length === 0) {
+        if (allImageUrls.length === 0) {
             console.error('No images found in response');
-            // Try to get text response for debugging
-            try {
-                const textResponse = response.text();
-                console.log('Response text:', textResponse);
-            } catch (e) {
-                console.log('Could not extract text from response');
-            }
             throw new Error('No images generated in response');
         }
 
         console.log('=== IMAGE GENERATION COMPLETE ===');
-        console.log('Total images generated:', imageUrls.length);
-        return imageUrls;
+        console.log('Total images generated:', allImageUrls.length);
+        return allImageUrls;
 
     } catch (error) {
         console.error('Error generating image:', error);

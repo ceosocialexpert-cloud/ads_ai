@@ -1,7 +1,8 @@
 .container {
   min-height: 100vh;
   background: var(--background-gradient);
-  padding-top: 70px; /* Відступ для fixed header */
+  padding-top: 70px;
+  overflow-y: auto;
 }
 
 .header {

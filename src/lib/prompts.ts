@@ -19,10 +19,11 @@ export interface PromptContext {
     format: string;
     referenceImages?: ReferenceImages;
     referenceDescription?: string;
+    userSpecifiedText?: string; // Текст, який користувач явно вказав для креативу
 }
 
 export function buildCreativePrompt(context: PromptContext): string {
-    const { projectSummary, keyFeatures, brandVoice, targetAudience, format, referenceImages, referenceDescription } = context;
+    const { projectSummary, keyFeatures, brandVoice, targetAudience, format, referenceImages, referenceDescription, userSpecifiedText } = context;
 
     const formatInstructions = getFormatInstructions(format);
 
@@ -39,8 +40,8 @@ BRAND VOICE: ${brandVoice}
 🎯 PRIMARY TARGET AUDIENCE (CRITICAL - ALL CONTENT MUST BE ADAPTED FOR THIS AUDIENCE):
 Name: ${targetAudience.name}
 Description: ${targetAudience.description}
-Pain Points: ${targetAudience.pain_points.join(', ')}
-Needs: ${targetAudience.needs.join(', ')}
+Pain Points: ${targetAudience.pain_points?.join(', ') || 'Не вказано'}
+Needs: ${targetAudience.needs?.join(', ') || 'Не вказано'}
 Demographics: ${targetAudience.demographics || 'Not specified'}
 
 CREATIVE FORMAT: ${formatInstructions}
@@ -69,7 +70,8 @@ CREATIVE FORMAT: ${formatInstructions}
 - Feature these people, speakers, or products prominently in the creative
 - Place them naturally within the template/background
 - Show them in a way that appeals to ${targetAudience.name}
-- Highlight how they relate to the audience's needs: ${targetAudience.needs.join(', ')}\n`;
+- Highlight how they relate to the audience's needs: ${targetAudience.needs?.join(', ') || 'Загальні потреби'}
+- 🧑 ETHNICITY DEFAULT: If people are shown, use Slavic (Eastern European) appearance by default unless explicitly specified otherwise\n`;
             }
 
             if (referenceImages.logo && referenceImages.logo.length > 0) {
@@ -77,6 +79,11 @@ CREATIVE FORMAT: ${formatInstructions}
 - Incorporate these logos or brand elements into the creative
 - Place strategically - visible but not overwhelming
 - Ensure brand identity is clear while maintaining design balance\n`;
+            } else {
+                prompt += `\n🚫 NO LOGO PROVIDED:
+- DO NOT create or add any fictional/placeholder logos
+- DO NOT add any brand marks unless provided by user
+- Leave branding space empty or use design elements only\n`;
             }
 
             prompt += `\n⚠️ COMPOSITION INSTRUCTION:
@@ -92,6 +99,24 @@ CREATIVE FORMAT: ${formatInstructions}
         prompt += `\nADDITIONAL STYLE NOTES: ${referenceDescription}\n`;
     }
 
+    // CRITICAL: Handle user-specified text
+    if (userSpecifiedText) {
+        prompt += `\n‼️ USER-SPECIFIED TEXT (MANDATORY):\n`;
+        prompt += `The user has explicitly provided the following text for this creative:\n`;
+        prompt += `"${userSpecifiedText}"\n`;
+        prompt += `\n🚨 TEXT GENERATION RULE:\n`;
+        prompt += `- USE ONLY the text provided above\n`;
+        prompt += `- DO NOT add any additional headlines, slogans, or copy\n`;
+        prompt += `- DO NOT create text variations or alternatives\n`;
+        prompt += `- DO NOT add call-to-actions unless specified by user\n`;
+        prompt += `- The creative must contain EXACTLY this text and nothing more\n\n`;
+    } else {
+        prompt += `\n📝 TEXT GENERATION (ALLOWED):\n`;
+        prompt += `- Generate appropriate headlines and copy for ${targetAudience.name}\n`;
+        prompt += `- Create compelling call-to-actions\n`;
+        prompt += `- Adapt messaging to audience needs and pain points\n\n`;
+    }
+
     prompt += `\nSTYLE REQUIREMENTS:
 - High-quality, professional design
 - Eye-catching and engaging for ${targetAudience.name}
@@ -99,10 +124,17 @@ CREATIVE FORMAT: ${formatInstructions}
 - Mobile-optimized
 - Brand-appropriate colors and aesthetics
 - Visual elements that directly address the pain points and needs of ${targetAudience.name}
+- 🧑 PEOPLE APPEARANCE: If people are featured, use Slavic (Eastern European) ethnicity by default unless user explicitly requests otherwise
+- 🚫 LOGO RULE: Only include logos if provided by user - DO NOT create fictional logos
 
-🎯 FINAL REMINDER: This creative is specifically for ${targetAudience.name}. Every element should speak to their needs (${targetAudience.needs.join(', ')}) and address their pain points (${targetAudience.pain_points.join(', ')}).`;
+🎯 FINAL REMINDER: This creative is specifically for ${targetAudience.name}. Every element should speak to their needs (${targetAudience.needs?.join(', ') || 'загальні потреби'}) and address their pain points (${targetAudience.pain_points?.join(', ') || 'загальні проблеми'}).`;
+
+    if (userSpecifiedText) {
+        prompt += ` ‼️ TEXT RULE: Use ONLY the user-provided text: "${userSpecifiedText}". Do NOT add any other text content.`;
+    }
 
     return prompt;
+
 }
 
 function getFormatInstructions(format: string): string {
@@ -163,6 +195,7 @@ export interface CreativePromptParams {
     hasLogo: boolean;
     hasPerson: boolean;
     language?: string; // Language code: uk, ru, en
+    userSpecifiedText?: string; // User's explicit text for the creative
 }
 
 export function generateCreativePrompt(params: CreativePromptParams): string {
@@ -179,6 +212,7 @@ export function generateCreativePrompt(params: CreativePromptParams): string {
         hasLogo,
         hasPerson,
         language = 'uk',
+        userSpecifiedText,
     } = params;
 
     const sizeInfo = SIZE_OPTIONS.find(s => s.id === size);
@@ -218,8 +252,8 @@ export function generateCreativePrompt(params: CreativePromptParams): string {
     prompt += `\n🎯 TARGET AUDIENCE (CRITICAL - ALL CONTENT MUST BE ADAPTED FOR THIS AUDIENCE):\n`;
     prompt += `Name: ${audienceName}\n`;
     prompt += `Description: ${audienceDescription}\n`;
-    prompt += `Pain Points: ${painPoints.join(', ')}\n`;
-    prompt += `Needs: ${needs.join(', ')}\n`;
+    prompt += `Pain Points: ${painPoints?.join(', ') || 'Не вказано'}\n`;
+    prompt += `Needs: ${needs?.join(', ') || 'Не вказано'}\n`;
     if (demographics) {
         prompt += `Demographics: Age ${demographics.age || 'N/A'}, ${demographics.gender || 'all genders'}, ${demographics.location || 'any location'}\n`;
     }
@@ -228,15 +262,22 @@ export function generateCreativePrompt(params: CreativePromptParams): string {
     
     // Add special instructions for Stories format (9:16)
     if (sizeInfo?.ratio === '9:16') {
-        prompt += `\n🚨 CRITICAL STORIES FORMAT REQUIREMENTS (1080x1920):\n`;
-        prompt += `- SAFE ZONE: Keep ALL TEXT and IMPORTANT ELEMENTS within the central area\n`;
-        prompt += `- TOP 250 PIXELS: DO NOT place any text or important content (Instagram/Facebook interface)\n`;
-        prompt += `- BOTTOM 250 PIXELS: DO NOT place any text or important content (Instagram/Facebook interface)\n`;
-        prompt += `- SAFE CONTENT AREA: Only pixels 250-1670 (vertical) are guaranteed visible\n`;
-        prompt += `- The full 1080x1920 image will be visible, but text MUST be in the safe zone\n`;
-        prompt += `- Logo can be placed in the safe zone (typically upper-middle or center)\n`;
-        prompt += `- Main text and call-to-action MUST be centered vertically in the safe area\n`;
-        prompt += `- Background/visuals can fill the entire 1080x1920 canvas\n\n`;
+        prompt += `\n🚨🚨🚨 CRITICAL STORIES FORMAT REQUIREMENTS (1080x1920) - MANDATORY:\n`;
+        prompt += `\n⛔ FORBIDDEN ZONES (NO TEXT, NO LOGOS, NO IMPORTANT CONTENT):\n`;
+        prompt += `- TOP 250 PIXELS (0-250px from top): ABSOLUTELY NO text, logos, or important elements\n`;
+        prompt += `- BOTTOM 250 PIXELS (1670-1920px from top): ABSOLUTELY NO text, logos, or important elements\n`;
+        prompt += `\n✅ SAFE ZONE FOR TEXT AND LOGOS:\n`;
+        prompt += `- ONLY use vertical area between 250px and 1670px (1420px height)\n`;
+        prompt += `- ALL TEXT must be placed in this safe zone\n`;
+        prompt += `- ALL LOGOS must be placed in this safe zone\n`;
+        prompt += `- Main headline: Place around 400-800px from top\n`;
+        prompt += `- Logo: Place around 300-500px from top or 900-1200px from top\n`;
+        prompt += `- Call-to-action: Place around 1400-1600px from top\n`;
+        prompt += `\n📐 LAYOUT RULES:\n`;
+        prompt += `- Background/visuals: Can fill the entire 1080x1920 canvas\n`;
+        prompt += `- Text and logos: STRICTLY between pixels 250-1670 only\n`;
+        prompt += `- Center content vertically within the safe zone\n`;
+        prompt += `- This is for Instagram/Facebook Stories - interface covers top and bottom\n\n`;
     }
 
     if (hasTemplate || hasLogo || hasPerson) {
@@ -255,6 +296,8 @@ export function generateCreativePrompt(params: CreativePromptParams): string {
             prompt += `- Place them naturally within the template\n`;
             prompt += `- Show them in a way that appeals to ${audienceName}\n`;
             prompt += `- Highlight how they relate to the audience's needs\n`;
+            prompt += `- 🧑 ETHNICITY DEFAULT: If people are shown, use Slavic (Eastern European) appearance by default\n`;
+            prompt += `- Only use different ethnicity if explicitly requested by the user\n`;
         }
 
         if (hasLogo) {
@@ -262,6 +305,14 @@ export function generateCreativePrompt(params: CreativePromptParams): string {
             prompt += `- Incorporate this logo into the creative\n`;
             prompt += `- Place strategically - visible but not overwhelming\n`;
             prompt += `- Ensure brand identity is clear\n`;
+            if (sizeInfo?.ratio === '9:16') {
+                prompt += `- ⚠️ STORIES: Logo MUST be between 250-1670px vertically (safe zone only)\n`;
+            }
+        } else {
+            prompt += `\n🚫 NO LOGO PROVIDED:\n`;
+            prompt += `- DO NOT create or add any fictional/placeholder logos\n`;
+            prompt += `- DO NOT add any brand marks unless provided by user\n`;
+            prompt += `- Leave branding space empty or use design elements only\n`;
         }
 
         prompt += `\n⚠️ COMPOSITION INSTRUCTION:\n`;
@@ -272,16 +323,47 @@ export function generateCreativePrompt(params: CreativePromptParams): string {
         prompt += `5. ADAPT the overall feel to target ${audienceName}\n`;
     }
 
+    // CRITICAL: Handle user-specified text
+    if (userSpecifiedText) {
+        prompt += `\n‼️ USER-SPECIFIED TEXT (MANDATORY):\n`;
+        prompt += `The user has explicitly provided the following text for this creative:\n`;
+        prompt += `"${userSpecifiedText}"\n`;
+        prompt += `\n🚨 TEXT GENERATION RULE:\n`;
+        prompt += `- USE ONLY the text provided above\n`;
+        prompt += `- DO NOT add any additional headlines, slogans, or copy\n`;
+        prompt += `- DO NOT create text variations or alternatives\n`;
+        prompt += `- DO NOT add call-to-actions unless specified by user\n`;
+        prompt += `- The creative must contain EXACTLY this text and nothing more\n\n`;
+    } else {
+        prompt += `\n📝 TEXT GENERATION (ALLOWED):\n`;
+        prompt += `- Generate appropriate headlines and copy for ${audienceName}\n`;
+        prompt += `- Create compelling call-to-actions\n`;
+        prompt += `- Adapt messaging to audience needs and pain points\n\n`;
+    }
+
     prompt += `\nSTYLE REQUIREMENTS:\n`;
     prompt += `- High-quality, professional advertising design\n`;
     prompt += `- Eye-catching and engaging for ${audienceName}\n`;
     prompt += `- Clear visual hierarchy\n`;
     prompt += `- Mobile-optimized for social media\n`;
-    prompt += `- Visual elements that address pain points: ${painPoints.join(', ')}\n`;
-    prompt += `- Appeal to needs: ${needs.join(', ')}\n`;
+    if (painPoints && painPoints.length > 0) {
+        prompt += `- Visual elements that address pain points: ${painPoints.join(', ')}\n`;
+    }
+    if (needs && needs.length > 0) {
+        prompt += `- Appeal to needs: ${needs.join(', ')}\n`;
+    }
     prompt += `- **ALL TEXT MUST BE IN ${languageName} (${language})**\n`;
+    prompt += `- 🧑 PEOPLE APPEARANCE: If people are featured, use Slavic (Eastern European) ethnicity by default unless user explicitly requests otherwise\n`;
+    prompt += `- 🚫 LOGO RULE: Only include logos if provided by user - DO NOT create fictional logos\n`;
+    if (sizeInfo?.ratio === '9:16') {
+        prompt += `- ⚠️ STORIES SAFE ZONE: ALL text and logos MUST be between 250-1670px vertically\n`;
+    }
 
-    prompt += `\n🎯 FINAL REMINDER: This creative is specifically for ${audienceName}. Every element should speak to their needs and address their pain points. REMEMBER: All text content MUST be in ${languageName} only!`;
+    if (userSpecifiedText) {
+        prompt += `\n🎯 FINAL REMINDER: This creative is for ${audienceName}. Use ONLY the user-provided text: "${userSpecifiedText}". Do NOT add any other text. All text must be in ${languageName} only!`;
+    } else {
+        prompt += `\n🎯 FINAL REMINDER: This creative is specifically for ${audienceName}. Every element should speak to their needs and address their pain points. Generate compelling text in ${languageName} only!`;
+    }
 
     return prompt;
 }

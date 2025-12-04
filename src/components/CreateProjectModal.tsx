@@ -77,7 +77,10 @@ export default function CreateProjectModal({ isOpen, onClose, onSubmit, initialU
             icon: iconFile,
         });
 
-        // Reset form AFTER successful submission (parent will close modal)
+        // Close modal immediately and reset form
+        onClose();
+        
+        // Reset form state after modal closes
         setTimeout(() => {
             setProjectName('');
             setProjectUrl('');
@@ -85,7 +88,7 @@ export default function CreateProjectModal({ isOpen, onClose, onSubmit, initialU
             setIconFile(null);
             setIconPreview(null);
             setIsSubmitting(false);
-        }, 500);
+        }, 300);
     };
 
     const handleClose = () => {

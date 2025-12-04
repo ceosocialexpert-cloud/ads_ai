@@ -17,9 +17,19 @@ export async function POST(request: NextRequest) {
             quantity = 1,
             referenceImages = [],
             referenceDescription,
+            isCreativeMode = false, // Чи це режим креативу без проекту
+            userText, // Текст який користувач вказав для креативу
         } = body;
 
-        if (!sessionId || !projectId || (!targetAudience && !targetAudienceDetails)) {
+        if (!sessionId) {
+            return NextResponse.json(
+                { error: 'Session ID is required' },
+                { status: 400 }
+            );
+        }
+
+        // Якщо НЕ режим креативу, потрібен проект та аудиторія
+        if (!isCreativeMode && (!projectId || (!targetAudience && !targetAudienceDetails))) {
             return NextResponse.json(
                 { error: 'Missing required parameters' },
                 { status: 400 }
@@ -28,33 +38,65 @@ export async function POST(request: NextRequest) {
 
         const supabase = getServerSupabase();
 
-        // Get project details
-        const { data: project, error: projectError } = await supabase
-            .from('projects')
-            .select('*')
-            .eq('id', projectId)
-            .single();
+        // Get project details (якщо є проект)
+        let project = null;
+        if (projectId) {
+            const { data: projectData, error: projectError } = await supabase
+                .from('projects')
+                .select('*')
+                .eq('id', projectId)
+                .single();
 
-        if (projectError || !project) {
-            return NextResponse.json(
-                { error: 'Project not found' },
-                { status: 404 }
-            );
+            if (projectError || !projectData) {
+                return NextResponse.json(
+                    { error: 'Project not found' },
+                    { status: 404 }
+                );
+            }
+            project = projectData;
         }
 
         // Get target audience details
-        let selectedAudience;
+        let selectedAudience = null;
         if (targetAudienceDetails) {
-            // Use provided audience details
             selectedAudience = targetAudienceDetails;
-        } else {
-            // Find the selected target audience from the project
-            selectedAudience = project.target_audiences?.find(
-                (a: TargetAudience) => a.id === targetAudience
-            );
+        } else if (targetAudience) {
+            // First check if audience is in project JSONB field
+            if (project?.target_audiences) {
+                selectedAudience = project.target_audiences.find(
+                    (a: TargetAudience) => a.id === targetAudience
+                );
+            }
+
+            // If not found, check the target_audiences table
+            if (!selectedAudience) {
+                const { data: audienceData } = await supabase
+                    .from('target_audiences')
+                    .select('*')
+                    .eq('id', targetAudience)
+                    .single();
+
+                if (audienceData) {
+                    selectedAudience = audienceData;
+                }
+            }
+
+            // If still not found, check subproject_target_audiences table
+            if (!selectedAudience) {
+                const { data: subAudienceData } = await supabase
+                    .from('subproject_target_audiences')
+                    .select('*')
+                    .eq('id', targetAudience)
+                    .single();
+
+                if (subAudienceData) {
+                    selectedAudience = subAudienceData;
+                }
+            }
         }
 
-        if (!selectedAudience) {
+        // У режимі креативу аудиторія не обов'язкова
+        if (!isCreativeMode && !selectedAudience) {
             return NextResponse.json(
                 { error: 'Target audience not found' },
                 { status: 404 }
@@ -72,10 +114,15 @@ export async function POST(request: NextRequest) {
 
         // Build the prompt using the new prompt builder
         const promptContext: any = {
-            projectSummary: project.analysis_result?.summary || 'Проект без опису',
-            keyFeatures: project.analysis_result?.key_features || [],
-            brandVoice: project.analysis_result?.brand_voice || 'Професійний',
-            targetAudience: selectedAudience,
+            projectSummary: project?.analysis_result?.summary || referenceDescription || 'Креатив без опису',
+            keyFeatures: project?.analysis_result?.key_features || [],
+            brandVoice: project?.analysis_result?.brand_voice || 'Професійний',
+            targetAudience: selectedAudience || {
+                name: 'Загальна аудиторія',
+                description: 'Широка аудиторія',
+                pain_points: [],
+                needs: []
+            },
             format: format,
             referenceImages: {
                 template: referenceImages.template || [],
@@ -83,6 +130,7 @@ export async function POST(request: NextRequest) {
                 logo: referenceImages.logo || [],
             },
             referenceDescription: referenceDescription || undefined,
+            userSpecifiedText: userText && userText.trim() ? userText.trim() : undefined,
         };
 
         const prompt = buildCreativePrompt(promptContext);
@@ -110,10 +158,10 @@ export async function POST(request: NextRequest) {
 
         // Save generated creatives to database
         const creativesToInsert = imageUrls.map((imageUrl: string) => ({
-            project_id: projectId,
-            project_name: project.name || 'Проект без назви',
+            project_id: projectId || null,
+            project_name: project?.name || 'Креатив без проекту',
             session_id: sessionId,
-            target_audience: selectedAudience.name,
+            target_audience: selectedAudience?.name || 'Загальна аудиторія',
             format: format,
             size: size,
             image_url: imageUrl,

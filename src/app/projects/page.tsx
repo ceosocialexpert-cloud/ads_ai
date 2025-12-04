@@ -141,6 +141,19 @@ export default function ProjectsPage() {
 
             if (data.success) {
                 setIsModalOpen(false);
+                
+                // Save success message to chat history
+                await fetch('/api/chat', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        sessionId,
+                        message: 'system',
+                        systemMessage: `✅ Проект "${projectData.name}" успішно створено!`,
+                        saveOnly: true,
+                    }),
+                });
+                
                 // Store created project data
                 setCreatedProject({
                     id: data.project.id,
@@ -171,6 +184,18 @@ export default function ProjectsPage() {
         if (!createdProject) return;
 
         try {
+            // Save "analysis started" message to chat
+            await fetch('/api/chat', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    sessionId,
+                    message: 'system',
+                    systemMessage: `🔄 Запускаю аналіз проекту "${createdProject.name}"...`,
+                    saveOnly: true,
+                }),
+            });
+            
             const response = await fetch('/api/analyze-project', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
@@ -180,6 +205,18 @@ export default function ProjectsPage() {
             const data = await response.json();
 
             if (data.success) {
+                // Save success message to chat
+                await fetch('/api/chat', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        sessionId,
+                        message: 'system',
+                        systemMessage: `✅ Аналіз проекту "${createdProject.name}" завершено успішно! Знайдено ${data.analysis?.target_audiences?.length || 0} сегментів аудиторії.`,
+                        saveOnly: true,
+                    }),
+                });
+                
                 setIsAnalysisModalOpen(false);
                 setCreatedProject(null);
                 alert(`✅ Аналіз проекту "${createdProject.name}" завершено успішно!`);
@@ -198,7 +235,19 @@ export default function ProjectsPage() {
         }
     };
 
-    const handleAnalysisSkip = () => {
+    const handleAnalysisSkip = async () => {
+        // Save "skip analysis" message to chat
+        await fetch('/api/chat', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+                sessionId,
+                message: 'system',
+                systemMessage: `✅ Проект "${createdProject?.name}" створено без аналізу`,
+                saveOnly: true,
+            }),
+        });
+        
         setIsAnalysisModalOpen(false);
         setCreatedProject(null);
         alert(`✅ Проект "${createdProject?.name}" створено без аналізу`);

@@ -1,9 +1,10 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { generateImageWithImagen, getAspectRatioFromSize } from '@/lib/imagen';
+import { getServerSupabase } from '@/lib/supabase';
 
 export async function POST(request: NextRequest) {
     try {
-        const { imageBase64, targetSize, sessionId } = await request.json();
+        const { imageBase64, targetSize, sessionId, projectId, projectName, targetAudience } = await request.json();
 
         if (!imageBase64 || !targetSize || !sessionId) {
             return NextResponse.json(
@@ -59,7 +60,7 @@ DO NOT change any content, text, or visual elements - ONLY adapt the layout to t
         console.log('  targetSize:', targetSize);
         console.log('  aspectRatio:', aspectRatio);
         console.log('  isStories:', isStories);
-        
+
         const resizedImages = await generateImageWithImagen({
             prompt,
             aspectRatio,
@@ -75,15 +76,40 @@ DO NOT change any content, text, or visual elements - ONLY adapt the layout to t
 
         console.log(`✅ Image resized successfully to ${targetSize}`);
 
+        // Save resized creative to database
+        const supabase = getServerSupabase();
+        const { data: savedCreative, error: saveError } = await supabase
+            .from('generated_creatives')
+            .insert({
+                project_id: projectId || null,
+                project_name: projectName || 'Ресайз',
+                session_id: sessionId,
+                target_audience: targetAudience || 'Ресайз',
+                format: 'resize',
+                size: targetSize,
+                image_url: resizedImages[0],
+                prompt_used: prompt.substring(0, 500),
+            })
+            .select()
+            .single();
+
+        if (saveError) {
+            console.error('Failed to save resized creative:', saveError);
+            // Don't fail the request if save fails
+        } else {
+            console.log('💾 Resized creative saved to gallery');
+        }
+
         return NextResponse.json({
             success: true,
             resizedImage: resizedImages[0],
             size: targetSize,
+            creative: savedCreative || null,
         });
     } catch (error) {
         console.error('Resize error:', error);
         return NextResponse.json(
-            { 
+            {
                 error: error instanceof Error ? error.message : 'Resize failed',
                 details: error instanceof Error ? error.stack : String(error)
             },
