@@ -369,16 +369,44 @@ export default function ProjectDetailPage() {
                                                             </ul>
                                                         </div>
                                                         
-                                                        {audience.demographics && Object.keys(audience.demographics).length > 0 && (
-                                                            <div className={styles.detailGroup}>
-                                                                <h5>Демографія</h5>
-                                                                <ul>
-                                                                    {Object.entries(audience.demographics).map(([key, value], index) => (
-                                                                        <li key={index}><strong>{key}:</strong> {value}</li>
-                                                                    ))}
-                                                                </ul>
-                                                            </div>
-                                                        )}
+                                                        {audience.demographics && (() => {
+                                                            try {
+                                                                // Handle both object and string demographics
+                                                                let demo = audience.demographics;
+                                                                
+                                                                // If it's a string, try to parse as JSON
+                                                                if (typeof demo === 'string') {
+                                                                    try {
+                                                                        demo = JSON.parse(demo);
+                                                                    } catch (e) {
+                                                                        // If parsing fails, it's just a plain text description
+                                                                        return (
+                                                                            <div className={styles.detailGroup}>
+                                                                                <h5>Демографія</h5>
+                                                                                <p>{String(demo)}</p>
+                                                                            </div>
+                                                                        );
+                                                                    }
+                                                                }
+                                                                
+                                                                // If it's an object with keys, display as key-value pairs
+                                                                if (demo && typeof demo === 'object' && Object.keys(demo).length > 0) {
+                                                                    return (
+                                                                        <div className={styles.detailGroup}>
+                                                                            <h5>Демографія</h5>
+                                                                            <ul>
+                                                                                {Object.entries(demo).map(([key, value], index) => (
+                                                                                    <li key={index}><strong>{key}:</strong> {value as string}</li>
+                                                                                ))}
+                                                                            </ul>
+                                                                        </div>
+                                                                    );
+                                                                }
+                                                            } catch (error) {
+                                                                console.error('Failed to render demographics:', error);
+                                                            }
+                                                            return null;
+                                                        })()}
                                                     </div>
                                                 </div>
                                                 
@@ -525,6 +553,45 @@ export default function ProjectDetailPage() {
                                                                         ))}
                                                                     </ul>
                                                                 </div>
+                                                                
+                                                                {audience.demographics && (() => {
+                                                                    try {
+                                                                        // Handle both object and string demographics
+                                                                        let demo = audience.demographics;
+                                                                        
+                                                                        // If it's a string, try to parse as JSON
+                                                                        if (typeof demo === 'string') {
+                                                                            try {
+                                                                                demo = JSON.parse(demo);
+                                                                            } catch (e) {
+                                                                                // If parsing fails, it's just a plain text description
+                                                                                return (
+                                                                                    <div className={styles.detailGroup}>
+                                                                                        <h5>Демографія</h5>
+                                                                                        <p>{String(demo)}</p>
+                                                                                    </div>
+                                                                                );
+                                                                            }
+                                                                        }
+                                                                        
+                                                                        // If it's an object with keys, display as key-value pairs
+                                                                        if (demo && typeof demo === 'object' && Object.keys(demo).length > 0) {
+                                                                            return (
+                                                                                <div className={styles.detailGroup}>
+                                                                                    <h5>Демографія</h5>
+                                                                                    <ul>
+                                                                                        {Object.entries(demo).map(([key, value], index) => (
+                                                                                            <li key={index}><strong>{key}:</strong> {value as string}</li>
+                                                                                        ))}
+                                                                                    </ul>
+                                                                                </div>
+                                                                            );
+                                                                        }
+                                                                    } catch (error) {
+                                                                        console.error('Failed to render subproject demographics:', error);
+                                                                    }
+                                                                    return null;
+                                                                })()}
                                                             </div>
                                                         </div>
                                                         

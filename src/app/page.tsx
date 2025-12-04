@@ -3,7 +3,7 @@
 import { useState, useEffect } from 'react';
 import Link from 'next/link';
 import ChatInterface from '@/components/ChatInterface';
-import BottomGenerationBar from '@/components/BottomGenerationBar';
+import CreateProjectModal from '@/components/CreateProjectModal';
 import { getSessionId } from '@/lib/session';
 import styles from './page.module.css';
 
@@ -15,11 +15,15 @@ export default function Home() {
   const [selectedProjectId, setSelectedProjectId] = useState<string | null>(null);
   const [selectedAudienceId, setSelectedAudienceId] = useState<string | null>(null);
   const [availableProjects, setAvailableProjects] = useState<any[]>([]);
+  const [chatMessages, setChatMessages] = useState<any[]>([]);
+  const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
+  const [prefilledUrl, setPrefilledUrl] = useState('');
   const sessionId = getSessionId();
 
   // Load available projects
   useEffect(() => {
     loadAvailableProjects();
+    loadChatHistory();
   }, []);
 
   // Check for saved project/audience selection
@@ -50,6 +54,19 @@ export default function Home() {
       }
     } catch (error) {
       console.error('Failed to load projects:', error);
+    }
+  };
+
+  const loadChatHistory = async () => {
+    try {
+      const response = await fetch(`/api/chat?sessionId=${sessionId}`);
+      const data = await response.json();
+
+      if (data.success && data.messages) {
+        setChatMessages(data.messages);
+      }
+    } catch (error) {
+      console.error('Failed to load chat history:', error);
     }
   };
 
@@ -88,10 +105,143 @@ export default function Home() {
     loadAvailableProjects();
   };
 
+  const handleCreateProject = async (data: any) => {
+    try {
+      console.log('Creating project with data:', data);
+      
+      // Add "creating" message to chat
+      const creatingMessage = {
+        id: Date.now().toString(),
+        role: 'system',
+        content: `🛠️ Створюю проект "${data.name}" та аналізую сайт...`,
+        created_at: new Date().toISOString(),
+      };
+      setChatMessages(prev => [...prev, creatingMessage]);
+      
+      // First, trigger analysis
+      const response = await fetch('/api/analyze', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          type: 'url',
+          data: { url: data.url },
+          sessionId,
+        }),
+      });
+
+      const result = await response.json();
+
+      if (result.success) {
+        setIsCreateModalOpen(false);
+        setPrefilledUrl('');
+        
+        // Add success message to chat
+        const successMessage = {
+          id: (Date.now() + 1).toString(),
+          role: 'system',
+          content: `✅ Проект "${data.name}" успішно створено! Знайдено ${result.analysis.target_audiences.length} сегментів цільової аудиторії.`,
+          created_at: new Date().toISOString(),
+        };
+        setChatMessages(prev => [...prev, successMessage]);
+        
+        loadAvailableProjects();
+        handleAnalysisComplete(result.project.id, result.analysis);
+      } else {
+        // Add error message to chat
+        const errorMessage = {
+          id: (Date.now() + 1).toString(),
+          role: 'system',
+          content: `❌ Помилка створення проекту: ${result.error}`,
+          created_at: new Date().toISOString(),
+        };
+        setChatMessages(prev => [...prev, errorMessage]);
+      }
+    } catch (error) {
+      console.error('Failed to create project:', error);
+      
+      // Add error message to chat
+      const errorMessage = {
+        id: (Date.now() + 1).toString(),
+        role: 'system',
+        content: '❌ Помилка створення проекту. Спробуйте ще раз.',
+        created_at: new Date().toISOString(),
+      };
+      setChatMessages(prev => [...prev, errorMessage]);
+    }
+  };
+
+  const openCreateModalWithUrl = (url: string) => {
+    setPrefilledUrl(url);
+    setIsCreateModalOpen(true);
+  };
+
   const handleGenerate = async (params: any) => {
     console.log('Generate with params:', params);
-    // TODO: Implement generation logic
-    alert('Генерація креативів...');
+    
+    // Add "generating" message to chat
+    const generatingMessage = {
+      id: Date.now().toString(),
+      role: 'system',
+      content: '📡 Запуск генерації креативу... 🎨',
+      created_at: new Date().toISOString(),
+    };
+    setChatMessages(prev => [...prev, generatingMessage]);
+    
+    try {
+      // Create FormData to send files
+      const formData = new FormData();
+      formData.append('sessionId', sessionId);
+      formData.append('projectId', params.projectId);
+      formData.append('audienceId', params.audienceId);
+      formData.append('size', params.size);
+      formData.append('quantity', params.quantity.toString());
+      
+      // Add template files
+      params.templateFiles.forEach((file: File) => {
+        formData.append('templateFiles', file);
+      });
+      
+      // Add logo files
+      params.logoFiles.forEach((file: File) => {
+        formData.append('logoFiles', file);
+      });
+      
+      // Add person files
+      params.personFiles.forEach((file: File) => {
+        formData.append('personFiles', file);
+      });
+      
+      const response = await fetch('/api/generate-creative', {
+        method: 'POST',
+        body: formData,
+      });
+      
+      const data = await response.json();
+      
+      if (data.success) {
+        console.log('✅ Creative generation response:', data);
+        
+        // Reload chat history to get the saved message with image
+        await loadChatHistory();
+      } else {
+        const errorMessage = {
+          id: (Date.now() + 1).toString(),
+          role: 'system',
+          content: '❌ Помилка генерації: ' + data.error,
+          created_at: new Date().toISOString(),
+        };
+        setChatMessages(prev => [...prev, errorMessage]);
+      }
+    } catch (error) {
+      console.error('Generation error:', error);
+      const errorMessage = {
+        id: (Date.now() + 1).toString(),
+        role: 'system',
+        content: '❌ Помилка генерації. Спробуйте ще раз.',
+        created_at: new Date().toISOString(),
+      };
+      setChatMessages(prev => [...prev, errorMessage]);
+    }
   };
 
   return (
@@ -99,16 +249,26 @@ export default function Home() {
       <main className={styles.main}>
         {/* Chat Interface - Full screen */}
         <div className={styles.chatContainer}>
-          <ChatInterface onAnalysisComplete={handleAnalysisComplete} />
+          <ChatInterface 
+            onAnalysisComplete={handleAnalysisComplete}
+            initialMessages={chatMessages}
+            onOpenCreateModal={openCreateModalWithUrl}
+            availableProjects={availableProjects}
+            currentProject={currentProject}
+            onProjectSelect={handleProjectSelect}
+          />
         </div>
       </main>
 
-      {/* Bottom Generation Bar - Fixed */}
-      <BottomGenerationBar
-        availableProjects={availableProjects}
-        currentProject={currentProject}
-        onProjectSelect={handleProjectSelect}
-        onGenerate={handleGenerate}
+      {/* Create Project Modal */}
+      <CreateProjectModal
+        isOpen={isCreateModalOpen}
+        onClose={() => {
+          setIsCreateModalOpen(false);
+          setPrefilledUrl('');
+        }}
+        onSubmit={handleCreateProject}
+        initialUrl={prefilledUrl}
       />
     </div>
   );

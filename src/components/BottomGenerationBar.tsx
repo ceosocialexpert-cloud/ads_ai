@@ -168,7 +168,7 @@ export default function BottomGenerationBar({
                     >
                         {SIZE_OPTIONS.map((size) => (
                             <option key={size.id} value={size.id}>
-                                {size.dimensions}
+                                {size.ratio}
                             </option>
                         ))}
                     </select>

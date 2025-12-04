@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { generateImage } from '@/lib/vertexai';
 import { buildCreativePrompt } from '@/lib/prompts';
 import { getServerSupabase, TargetAudience } from '@/lib/supabase';
-import { CREATIVE_FORMATS, SIZE_OPTIONS } from '@/lib/prompts';
+import { SIZE_OPTIONS } from '@/lib/prompts';
 
 export async function POST(request: NextRequest) {
     try {
@@ -58,15 +58,6 @@ export async function POST(request: NextRequest) {
             return NextResponse.json(
                 { error: 'Target audience not found' },
                 { status: 404 }
-            );
-        }
-
-        // Get format details
-        const formatConfig = CREATIVE_FORMATS.find((f: any) => f.id === format);
-        if (!formatConfig) {
-            return NextResponse.json(
-                { error: 'Invalid format' },
-                { status: 400 }
             );
         }
 

@@ -1,12 +1,13 @@
 'use client';
 
-import { useState, useRef } from 'react';
+import { useState, useRef, useEffect } from 'react';
 import styles from './CreateProjectModal.module.css';
 
 interface CreateProjectModalProps {
     isOpen: boolean;
     onClose: () => void;
     onSubmit: (data: ProjectData) => void;
+    initialUrl?: string;
 }
 
 export interface ProjectData {
@@ -16,13 +17,21 @@ export interface ProjectData {
     icon?: File | null;
 }
 
-export default function CreateProjectModal({ isOpen, onClose, onSubmit }: CreateProjectModalProps) {
+export default function CreateProjectModal({ isOpen, onClose, onSubmit, initialUrl = '' }: CreateProjectModalProps) {
     const [projectName, setProjectName] = useState('');
     const [projectUrl, setProjectUrl] = useState('');
     const [projectLanguage, setProjectLanguage] = useState('uk');
     const [iconFile, setIconFile] = useState<File | null>(null);
     const [iconPreview, setIconPreview] = useState<string | null>(null);
+    const [isSubmitting, setIsSubmitting] = useState(false);
     const fileInputRef = useRef<HTMLInputElement>(null);
+
+    // Update URL when modal opens with initialUrl
+    useEffect(() => {
+        if (isOpen && initialUrl) {
+            setProjectUrl(initialUrl);
+        }
+    }, [isOpen, initialUrl]);
 
     if (!isOpen) return null;
 
@@ -59,6 +68,8 @@ export default function CreateProjectModal({ isOpen, onClose, onSubmit }: Create
             return;
         }
 
+        setIsSubmitting(true);
+        
         onSubmit({
             name: projectName,
             url: projectUrl,
@@ -66,17 +77,30 @@ export default function CreateProjectModal({ isOpen, onClose, onSubmit }: Create
             icon: iconFile,
         });
 
-        // Reset form
+        // Reset form AFTER successful submission (parent will close modal)
+        setTimeout(() => {
+            setProjectName('');
+            setProjectUrl('');
+            setProjectLanguage('uk');
+            setIconFile(null);
+            setIconPreview(null);
+            setIsSubmitting(false);
+        }, 500);
+    };
+
+    const handleClose = () => {
+        // Reset form when closing
         setProjectName('');
         setProjectUrl('');
         setProjectLanguage('uk');
         setIconFile(null);
         setIconPreview(null);
+        onClose();
     };
 
     const handleBackdropClick = (e: React.MouseEvent) => {
         if (e.target === e.currentTarget) {
-            onClose();
+            handleClose();
         }
     };
 
@@ -85,7 +109,7 @@ export default function CreateProjectModal({ isOpen, onClose, onSubmit }: Create
             <div className={styles.modal}>
                 <div className={styles.header}>
                     <h2>Створити новий проект</h2>
-                    <button className={styles.closeBtn} onClick={onClose}>
+                    <button className={styles.closeBtn} onClick={handleClose}>
                         ✕
                     </button>
                 </div>
@@ -195,15 +219,16 @@ export default function CreateProjectModal({ isOpen, onClose, onSubmit }: Create
                         <button
                             type="button"
                             className={styles.cancelBtn}
-                            onClick={onClose}
+                            onClick={handleClose}
                         >
                             Скасувати
                         </button>
                         <button
                             type="submit"
                             className={styles.submitBtn}
+                            disabled={isSubmitting}
                         >
-                            Створити проект
+                            {isSubmitting ? 'Створюється...' : 'Створити проект'}
                         </button>
                     </div>
                 </form>

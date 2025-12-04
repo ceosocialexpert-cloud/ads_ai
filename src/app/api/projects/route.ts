@@ -61,12 +61,15 @@ export async function GET(request: NextRequest) {
             .order('created_at', { ascending: false });
 
         if (error) {
-            console.error('Database error:', error);
+            console.error('Database error fetching projects:', error);
+            console.error('Error details:', JSON.stringify(error, null, 2));
             return NextResponse.json(
-                { error: 'Failed to fetch projects' },
+                { error: 'Failed to fetch projects', details: error.message },
                 { status: 500 }
             );
         }
+
+        console.log('Successfully fetched projects:', projects?.length || 0);
 
         return NextResponse.json({
             success: true,

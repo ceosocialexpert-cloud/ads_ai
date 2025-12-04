@@ -2,6 +2,30 @@ import { NextRequest, NextResponse } from 'next/server';
 import { chat } from '@/lib/gemini';
 import { getServerSupabase } from '@/lib/supabase';
 
+// Функція для очищення markdown форматування
+function cleanMarkdown(text: string): string {
+    return text
+        // Видаляємо таблиці markdown
+        .replace(/\|.*\|/g, '')
+        .replace(/[:|\-]{3,}/g, '')
+        // Видаляємо жирний текст
+        .replace(/\*\*(.+?)\*\*/g, '$1')
+        // Видаляємо курсив
+        .replace(/\*(.+?)\*/g, '$1')
+        .replace(/_(.+?)_/g, '$1')
+        // Видаляємо заголовки
+        .replace(/^#{1,6}\s+/gm, '')
+        // Видаляємо inline code
+        .replace(/`(.+?)`/g, '$1')
+        // Видаляємо code blocks
+        .replace(/```[\s\S]*?```/g, '')
+        // Видаляємо посилання [text](url)
+        .replace(/\[([^\]]+)\]\([^)]+\)/g, '$1')
+        // Очищаємо множинні порожні рядки
+        .replace(/\n{3,}/g, '\n\n')
+        .trim();
+}
+
 export async function POST(request: NextRequest) {
     try {
         const body = await request.json();
@@ -30,17 +54,20 @@ export async function POST(request: NextRequest) {
         ];
 
         const response = await chat(messages);
+        
+        // Очищаємо markdown форматування
+        const cleanedResponse = cleanMarkdown(response);
 
         // Save assistant response
         await supabase.from('chat_messages').insert({
             session_id: sessionId,
             role: 'assistant',
-            content: response,
+            content: cleanedResponse,
         });
 
         return NextResponse.json({
             success: true,
-            response,
+            response: cleanedResponse,
         });
     } catch (error) {
         console.error('Chat error:', error);

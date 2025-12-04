@@ -148,3 +148,140 @@ export const SIZE_OPTIONS = [
     { id: 'landscape', name: 'Landscape', dimensions: '1920x1080', ratio: '16:9' },
     { id: 'portrait', name: 'Portrait', dimensions: '1080x1350', ratio: '4:5' },
 ];
+
+// Generate creative prompt for image generation API
+export interface CreativePromptParams {
+    projectName?: string;
+    projectDescription?: string;
+    audienceName: string;
+    audienceDescription: string;
+    painPoints: string[];
+    needs: string[];
+    demographics: any;
+    size: string;
+    hasTemplate: boolean;
+    hasLogo: boolean;
+    hasPerson: boolean;
+    language?: string; // Language code: uk, ru, en
+}
+
+export function generateCreativePrompt(params: CreativePromptParams): string {
+    const {
+        projectName,
+        projectDescription,
+        audienceName,
+        audienceDescription,
+        painPoints,
+        needs,
+        demographics,
+        size,
+        hasTemplate,
+        hasLogo,
+        hasPerson,
+        language = 'uk',
+    } = params;
+
+    const sizeInfo = SIZE_OPTIONS.find(s => s.id === size);
+    const dimensions = sizeInfo?.dimensions || '1080x1080';
+    
+    // Language mapping for instructions
+    const languageNames: Record<string, string> = {
+        'uk': 'Ukrainian (Українська)',
+        'ru': 'Russian (Русский)',
+        'en': 'English',
+    };
+    
+    const languageName = languageNames[language] || languageNames['uk'];
+
+    let prompt = `Create a professional advertising creative for social media.
+
+`;
+    
+    // CRITICAL: Language requirement at the very beginning
+    prompt += `‼️ CRITICAL LANGUAGE REQUIREMENT:
+`;
+    prompt += `ALL TEXT in this creative MUST be EXCLUSIVELY in ${languageName}.
+`;
+    prompt += `Language code: ${language}
+`;
+    prompt += `Do NOT use any other language. Every word, headline, description, and call-to-action MUST be in ${languageName}.
+
+`;
+
+    if (projectName) {
+        prompt += `PROJECT: ${projectName}\n`;
+    }
+    if (projectDescription) {
+        prompt += `DESCRIPTION: ${projectDescription}\n`;
+    }
+
+    prompt += `\n🎯 TARGET AUDIENCE (CRITICAL - ALL CONTENT MUST BE ADAPTED FOR THIS AUDIENCE):\n`;
+    prompt += `Name: ${audienceName}\n`;
+    prompt += `Description: ${audienceDescription}\n`;
+    prompt += `Pain Points: ${painPoints.join(', ')}\n`;
+    prompt += `Needs: ${needs.join(', ')}\n`;
+    if (demographics) {
+        prompt += `Demographics: Age ${demographics.age || 'N/A'}, ${demographics.gender || 'all genders'}, ${demographics.location || 'any location'}\n`;
+    }
+
+    prompt += `\nCREATIVE FORMAT: ${dimensions} (${sizeInfo?.ratio || '1:1'})\n`;
+    
+    // Add special instructions for Stories format (9:16)
+    if (sizeInfo?.ratio === '9:16') {
+        prompt += `\n🚨 CRITICAL STORIES FORMAT REQUIREMENTS (1080x1920):\n`;
+        prompt += `- SAFE ZONE: Keep ALL TEXT and IMPORTANT ELEMENTS within the central area\n`;
+        prompt += `- TOP 250 PIXELS: DO NOT place any text or important content (Instagram/Facebook interface)\n`;
+        prompt += `- BOTTOM 250 PIXELS: DO NOT place any text or important content (Instagram/Facebook interface)\n`;
+        prompt += `- SAFE CONTENT AREA: Only pixels 250-1670 (vertical) are guaranteed visible\n`;
+        prompt += `- The full 1080x1920 image will be visible, but text MUST be in the safe zone\n`;
+        prompt += `- Logo can be placed in the safe zone (typically upper-middle or center)\n`;
+        prompt += `- Main text and call-to-action MUST be centered vertically in the safe area\n`;
+        prompt += `- Background/visuals can fill the entire 1080x1920 canvas\n\n`;
+    }
+
+    if (hasTemplate || hasLogo || hasPerson) {
+        prompt += `\n📸 REFERENCE IMAGES PROVIDED:\n`;
+
+        if (hasTemplate) {
+            prompt += `\n🎨 TEMPLATE/BACKGROUND:\n`;
+            prompt += `- Use this image as the base template and background style\n`;
+            prompt += `- Maintain the visual aesthetic, color palette, and layout structure\n`;
+            prompt += `- This is the FOUNDATION of the creative\n`;
+        }
+
+        if (hasPerson) {
+            prompt += `\n👤 PERSON/SUBJECT:\n`;
+            prompt += `- Feature this person/product prominently in the creative\n`;
+            prompt += `- Place them naturally within the template\n`;
+            prompt += `- Show them in a way that appeals to ${audienceName}\n`;
+            prompt += `- Highlight how they relate to the audience's needs\n`;
+        }
+
+        if (hasLogo) {
+            prompt += `\n🏬 LOGO/BRAND:\n`;
+            prompt += `- Incorporate this logo into the creative\n`;
+            prompt += `- Place strategically - visible but not overwhelming\n`;
+            prompt += `- Ensure brand identity is clear\n`;
+        }
+
+        prompt += `\n⚠️ COMPOSITION INSTRUCTION:\n`;
+        prompt += `1. START with the template as the foundation\n`;
+        prompt += `2. LAYER the person/subject as the main focal point\n`;
+        prompt += `3. ADD the logo in an appropriate location\n`;
+        prompt += `4. ENSURE everything works together cohesively\n`;
+        prompt += `5. ADAPT the overall feel to target ${audienceName}\n`;
+    }
+
+    prompt += `\nSTYLE REQUIREMENTS:\n`;
+    prompt += `- High-quality, professional advertising design\n`;
+    prompt += `- Eye-catching and engaging for ${audienceName}\n`;
+    prompt += `- Clear visual hierarchy\n`;
+    prompt += `- Mobile-optimized for social media\n`;
+    prompt += `- Visual elements that address pain points: ${painPoints.join(', ')}\n`;
+    prompt += `- Appeal to needs: ${needs.join(', ')}\n`;
+    prompt += `- **ALL TEXT MUST BE IN ${languageName} (${language})**\n`;
+
+    prompt += `\n🎯 FINAL REMINDER: This creative is specifically for ${audienceName}. Every element should speak to their needs and address their pain points. REMEMBER: All text content MUST be in ${languageName} only!`;
+
+    return prompt;
+}

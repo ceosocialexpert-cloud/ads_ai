@@ -1,0 +1,24 @@
+🧪 Testing Gemini 3 Pro Image Preview API...
+
+🔐 Getting access token...
+✅ Got access token
+
+📤 Sending request to Gemini API...
+Endpoint: https://aiplatform.googleapis.com/v1/projects/gen-lang-client-0613592862/locations/global/publishers/google/models/gemini-3-pro-image-preview:generateContent
+Prompt: Generate a simple test image of a modern office workspace 
+
+✅ Got response from API
+
+📋 Response structure:
+  - Has candidates: true
+  - Candidates count: 1
+  - First candidate has content: true
+  - First candidate has parts: true
+  - Parts count: 1
+
+  📦 First part structure:
+    - Keys: [ 'inlineData', 'thoughtSignature' ]
+    - Has "image" field: false
+    - Has "inline_data" field: false
+
+✅ Test completed successfully!
